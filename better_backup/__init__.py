@@ -11,11 +11,6 @@ import functools
 
 from better_backup.utils import *
 
-SRC_DIR = "src"
-METADATA_DIR = "metadata"
-CACHE_DIR = "cache"
-TEMP_DIR = "temp"
-
 PREFIX = "!!bb"
 
 CONFIG_FILE = os.path.join("config", "Better_Backup.json")
@@ -44,23 +39,23 @@ def init_folder(data_dir: str):
             json.dump({}, f)
 
 
-
-
-
 def format_dir_size(size: int) -> str:
     if size < 2**30:
         return "{} MB".format(round(size / 2**20, 2))
     else:
         return "{} GB".format(round(size / 2**30, 2))
 
+
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(
         "better_backup.{}".format(translation_key), *args
     )
 
+
 def command_run(message: Any, text: Any, command: str) -> RTextBase:
     fancy_text = message.copy() if isinstance(message, RTextBase) else RText(message)
     return fancy_text.set_hover_text(text).set_click_event(RAction.run_command, command)
+
 
 def print_message(source: CommandSource, msg, tell=True, prefix="§a[Better Backup]§r "):
     msg = RTextList(prefix, msg)
@@ -69,12 +64,15 @@ def print_message(source: CommandSource, msg, tell=True, prefix="§a[Better Back
     else:
         source.reply(msg)
 
+
 def print_unknown_argument_message(source: CommandSource, error: UnknownArgument):
-	print_message(source, command_run(
-		tr('unknown_command.text', PREFIX),
-		tr('unknown_command.hover'),
-		PREFIX
-    ))
+    print_message(
+        source,
+        command_run(
+            tr("unknown_command.text", PREFIX), tr("unknown_command.hover"), PREFIX
+        ),
+    )
+
 
 def single_op(name: RTextBase):
     def wrapper(func: Callable):
@@ -94,9 +92,6 @@ def single_op(name: RTextBase):
         return wrap
 
     return wrapper
-
-
-
 
 
 def trigger_abort(source: CommandSource):
@@ -150,7 +145,7 @@ def register_command(server: PluginServerInterface):
     server.register_command(
         Literal(PREFIX)
         .runs(print_help_message)
-		.on_error(UnknownArgument, print_unknown_argument_message, handled=True)
+        .on_error(UnknownArgument, print_unknown_argument_message, handled=True)
         .then(
             get_literal_node("make")
             .runs(lambda src: create_backup(src, None))
@@ -185,9 +180,6 @@ def register_command(server: PluginServerInterface):
         .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
         .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
     )
-
-
-
 
 
 @new_thread("BB - create")
@@ -285,14 +277,14 @@ def restore_backup(source: CommandSource, uuid: Optional[str]):
         .h(tr("restore_backup.confirm_hover"))
         .c(
             RAction.suggest_command,
-            f'{PREFIX} confirm',
+            f"{PREFIX} confirm",
         ),
         ", ",
         RText(tr("restore_backup.abort_hint", PREFIX))
         .h(tr("restore_backup.abort_hover"))
         .c(
             RAction.suggest_command,
-            f'{PREFIX} abort',
+            f"{PREFIX} abort",
         ),
     )
     print_message(
@@ -369,11 +361,11 @@ def do_restore(source: CommandSource):
             )
         )
         restore_temp(
-            config.world_names,
-            os.path.join(config.backup_data_path, TEMP_DIR),
-            config.server_path,
+            config.world_names, os.path.join(config.backup_data_path, TEMP_DIR), config
         )
-    uuid_selected = None
+    finally:
+        clear_temp(src_path=config.server_path)
+        uuid_selected = None
 
 
 def list_backups(source: CommandSource):
@@ -473,6 +465,7 @@ def reset_cache(source: CommandSource):
     init_folder(data_dir=backup_data_path)
     print_message(source, tr("reset_backup.success"), tell=False)
 
+
 def on_info(server: PluginServerInterface, info: Info):
     if not info.is_user:
         if info.content in [
@@ -481,7 +474,8 @@ def on_info(server: PluginServerInterface, info: Info):
         ]:
             global game_saved
             game_saved = True
-            
+
+
 def on_unload(server):
-	global abort_restore
-	abort_restore = True
+    global abort_restore
+    abort_restore = True

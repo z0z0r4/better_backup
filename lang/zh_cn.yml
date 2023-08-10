@@ -41,7 +41,7 @@ better_backup:
     fail: §a备份§r失败，错误代码{0}
 
   restore_backup:
-    echo_action: 准备将存档恢复至备份点§6{0}§r
+    echo_action: 准备将存档恢复至备份点 §6{0}§r
     confirm_hint: 使用§7{0} confirm§r 确认§c回档§r
     confirm_hover: 点击确认
     abort_hint: §7{0} abort§r 取消
@@ -56,7 +56,7 @@ better_backup:
 
   do_restore:
     countdown.intro: 10秒后关闭服务器§c回档§r
-    countdown.text: 还有{0}秒，将§c回档§r为备份点§6{1}§r
+    countdown.text: 还有{0}秒，将§c回档§r为备份点 §6{1}§r
     countdown.hover: 点击终止回档！
     abort: §c回档§r被中断！
 

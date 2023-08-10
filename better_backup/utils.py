@@ -112,7 +112,6 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
 def restore_temp(
     *src_dirs: str,
     temp_dir: str = TEMP_DIR,
-    src_path: str = None,
     config: Configuration = None,
 ):
     def ignore_files_and_folders(src: str, names: list) -> list:
@@ -125,6 +124,7 @@ def restore_temp(
                 ignore_names.append(name)
         return ignore_names
 
+    src_path = config.server_path
     for src_dir in src_dirs:
         os.removedirs(os.path.join(src_path, src_dir))
         os.makedirs(os.path.join(src_path, src_dir))
@@ -135,6 +135,10 @@ def restore_temp(
             dirs_exist_ok=True,
             ignore=ignore_files_and_folders,
         )
+
+
+def clear_temp(temp_dir: str = TEMP_DIR, src_path: str = None):
+    rmtree(os.path.join(src_path, temp_dir))
 
 
 def get_backup_info(backup_uuid: str, metadata_dir: str) -> dict:
