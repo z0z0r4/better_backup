@@ -99,7 +99,7 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
     for src_dir in src_dirs:
         copytree(
             os.path.join(src_path, src_dir),
-            temp_dir,
+            os.path.join(temp_dir, src_dir),
             dirs_exist_ok=True,
             # ignore=ignore_files_and_folders, # copy all files including ignore files
         )
@@ -130,7 +130,7 @@ def restore_temp(
         os.makedirs(os.path.join(src_path, src_dir))
 
         copytree(
-            temp_dir,
+            os.path(temp_dir, src_dir),
             os.path.join(src_path, src_dir),
             dirs_exist_ok=True,
             ignore=ignore_files_and_folders,
