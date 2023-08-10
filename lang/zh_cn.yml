@@ -1,0 +1,90 @@
+better_backup:
+  help_message: |
+    ------ {1} v{2} ------
+    一个支持文件去重的高效备份/回档插件
+    §d【格式说明】§r
+    §7{0}§r 显示帮助信息
+    §7{0} make §e[<message>]§r 创建一个§a备份§r。§e<message>§r为可选注释
+    §7{0} restore §6[<uuid>]§r §c回档§r为备份点§6<uuid>§r的存档。
+    §7{0} remove §6[<uuid>]§r §c删除§r备份点§6<uuid>§r的存档
+    §7{0} confirm§r 再次确认是否进行§c回档§r
+    §7{0} abort§r 在任何时候键入此指令可中断§c回档§r
+    §7{0} list§r 显示各备份点的存档信息
+    §7{0} reload§r 重新加载配置文件
+    §7{0} reset§r 重置备份数据
+    当 §6<uuid>§r 未设置时默认值为最新备份点的 uuid
+
+  second: "{0}秒"
+  minute: "{0}分钟"
+  hour: "{0}小时"
+  day: "{0}天"
+  empty_comment: §7空§r
+  unknown_backup: uuid 输入错误
+  empty_backup: uuid 输入错误，备份点§6{0}§r不存在
+  no_one_backup: 未找到可用备份点
+
+  lock.warning: 正在{0}中，请等待操作执行完成
+  operations:
+    remove: §a删除备份点§r
+    create: §a备份§r
+    restore: §c回档§r
+
+  remove_backup:
+    success: 删除备份点§6{0}§r§a完成§r
+    fail: "删除备份点§6{0}§r§4失败§r，错误代码: {1}"
+
+  create_backup:
+    start: §a备份§r中...请稍等
+    abort.plugin_unload: 插件重载，§a备份§r中断！
+    abort.no_slot: 未找到可用备份点，§a备份§r中断！
+    success: §a备份§r §6{0}§r 完成，耗时§6{1}§r秒 {2}
+    fail: §a备份§r失败，错误代码{0}
+
+  restore_backup:
+    echo_action: 准备将存档恢复至备份点§6{0}§r
+    confirm_hint: 使用§7{0} confirm§r 确认§c回档§r
+    confirm_hover: 点击确认
+    abort_hint: §7{0} abort§r 取消
+    abort_hover: 点击取消
+    success: §c回档§r成功
+
+  reset_backup:
+    start: 准备重置备份数据
+    success: §c重置§r成功
+
+  confirm_restore.nothing_to_confirm: 没有什么需要确认的
+
+  do_restore:
+    countdown.intro: 10秒后关闭服务器§c回档§r
+    countdown.text: 还有{0}秒，将§c回档§r为备份点§6{1}§r
+    countdown.hover: 点击终止回档！
+    abort: §c回档§r被中断！
+
+  trigger_abort.abort: 终止操作！
+
+  list_backup:
+    title: §d【备份点信息】§r
+    total_space: "备份总占用空间: §a{0}§r"
+    restore_hint: 回档至 {0}
+    remove_hint: 删除备份 {0}
+
+  print_help:
+    hotbar: §d【快捷操作】§r
+    click_to_create:
+      text: ">>> §a点我创建一个备份§r <<<"
+      hover: 记得修改注释
+      command: "{0} make 我是一个注释"
+    click_to_restore:
+      text: ">>> §c点我回档至最近的备份§r <<<"
+      hover: 也就是回档至第一个备份点
+      command: "{0} back"
+
+  unknown_command:
+    text: 参数错误！请输入§7{0}§r以获取插件信息
+    hover: 点击查看帮助
+  command:
+    permission_denied: 权限不足
+    wrong_slot: 备份点输入错误
+  register:
+    summory_help: §a备份§r/§c回档§r，§6{0}§r备份点
+    show_help: 点击查看帮助信息

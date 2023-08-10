@@ -1,0 +1,22 @@
+{
+	"id": "better_backup",
+	"version": "1.0.0",
+	"name": "Better Backup",
+	"description": {
+		"en_us": "A plugin that supports efficient backup/rollback with file deduplication",
+		"zh_cn": "支持文件去重的高效备份/回档插件"
+	},
+	"author": [
+		"z0z0r4"
+	],
+	"link": "https://github.com/z0z0r4/better_backup",
+	"dependencies": {
+		"mcdreforged": ">=2.1.2"
+	},
+
+	"archive_name": "Better_Backup-v{version}",
+	"resources": [
+		"lang",
+		"LICENSE"
+	]
+}
