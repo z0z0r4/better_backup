@@ -364,7 +364,7 @@ def do_restore(source: CommandSource):
             config.world_names, os.path.join(config.backup_data_path, TEMP_DIR), config
         )
     finally:
-        clear_temp(src_path=config.server_path)
+        clear_temp(temp_dir=os.path.join(config.backup_data_path, TEMP_DIR))
         uuid_selected = None
 
 

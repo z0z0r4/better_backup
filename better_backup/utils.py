@@ -137,8 +137,8 @@ def restore_temp(
         )
 
 
-def clear_temp(temp_dir: str = TEMP_DIR, src_path: str = None):
-    rmtree(os.path.join(src_path, temp_dir))
+def clear_temp(temp_dir: str = TEMP_DIR):
+    rmtree(temp_dir)
 
 
 def get_backup_info(backup_uuid: str, metadata_dir: str) -> dict:
