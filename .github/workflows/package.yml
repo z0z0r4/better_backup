@@ -3,6 +3,9 @@ name: CI for MCDR Plugin
 on:
   push:
   pull_request:
+  
+permissions:
+  contents: write
 
 jobs:
   package:
