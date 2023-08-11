@@ -7,7 +7,14 @@ A plugin that supports efficient backup/rollback with file deduplication
 
 一个支持文件去重的高效备份/回档 MCDR 插件，自带定时器
 
-![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
+![image](https://github.com/z0z0r4/better_backup/assets/78744121/8e0b42d9-89a8-4412-8f71-56b828a4ab80)
+
+基准测试见 https://github.com/z0z0r4/better_backup/issues/5 结论
+- 首次备份时无论如何 Better_Backup 都会慢于 QucikBackupM，原因在于逻辑不同
+- 在存档较小时 QucikBackupM 速率占优，但此时耗时基本上都很小，区别不大
+- 在存档较大，如 10G 左右，QucikBackupM 与 Better_Backup 速率基本持平，耗时 30s 左右
+- 在存档更大后，Better_Backup 备份速度明显快于 QucikBackupM，在 16G 时将近只需要一半的时间
+- **然而速率总体基本持平的事实立足于占用空间原小于 QucikBackupM 的基础上，所以推荐使用 Better_Backup**
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
 ```
