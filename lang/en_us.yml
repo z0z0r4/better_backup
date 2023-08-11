@@ -5,14 +5,16 @@ better_backup:
     §d[Format]§r
     §7{0}§r Display help message
     §7{0} make §e[<message>]§r Make a §abackup§r. §e<message>§r is an optional comment message
-    §7{0} restore §6<uuid>§r §cRestore§r the world to backup §6<uuid>§r
-    §7{0} remove §6<uuid>§r §cDelete§r the world in backup §6<uuid>§r
+    §7{0} restore §6<uuid|index>§r §cRestore§r the world to backup §6<uuid|index>§r
+    §7{0} remove §6<uuid|index>§r §cDelete§r the world in backup §6<uuid|index>§r
     §7{0} confirm§r Use after execute back to confirm §crestore§r execution
     §7{0} abort§r Abort backup §crestoring§r
-    §7{0} list§r Display backup information
+    §7{0} list [<page>]§r Display backup information to choise backups
     §7{0} reload§r Reload config file
     §7{0} reset§r Reset backup data
-    When §6<uuid>§r is not set the default value is the latest backup uuid
+    Latest backup point when §6<uuid|index>§r is not set or §c1§r
+    For example, §c2§r is the second backup point by the order of creation date
+    But here §cindex§r does not consider §cpage§r, please calculate it yourself
     §7{0} timer§r Show status of the bacckup timer
     §7{0} timer enable§r Start the backup timer
     §7{0} timer disable§r Disable the backup timer
@@ -71,7 +73,9 @@ better_backup:
     restore_hint: Restore to backup {0}
     remove_hint: Remove backup {0}
     total_space: "Total space consumed: §a{0}§r"
-
+    page:
+      page_not_found: Page Not Found
+      total_info: Total {0} pages, {1} backups
   print_help:
     hotbar: §d[Hotbar]§r
     click_to_create:

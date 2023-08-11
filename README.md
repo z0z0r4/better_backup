@@ -34,21 +34,25 @@ mcd_root/
 
 `!!bb make [<message>]` 创建备份。`<message>` 为可选存档注释
 
-`!!bb restore [<uuid>]` 回档为槽位 `<uuid>` 的存档
+`!!bb restore [<uuid|index>]` 回档为槽位 `<uuid|index>` 的存档
 
-`!!bb remove [<uuid>]` 删除槽位 `<uuid>` 的存档
+`!!bb remove [<uuid|index>]` 删除槽位 `<uuid|index>` 的存档
 
-`!!bb confirm` 在执行 `!!bb restore [<uuid>]` 后使用，再次确认是否进行回档
+`!!bb confirm` 在执行 `!!bb restore [<uuid|index>]` 后使用，再次确认是否进行回档
 
 `!!bb abort` 在任何时候键入此指令可中断回档
 
-`!!bb list` 显示所有存档信息
+`!!bb list [<page>]` 显示分页存档信息，默认为第一页
 
 `!!bb reload` 重新加载配置文件
 
 `!!bb reset` 重置存档数据
 
-当 `<uuid>` 未被指定时默认选择最新备份
+当 `<uuid|index>` 未设置或为 1 时为最新备份点的 uuid
+
+如 `2` 为由新到旧的第二个备份点
+
+但此处 `index` 不考虑 `page`，请自行计算
 
 `!!bb timer` 显示定时器状态
 

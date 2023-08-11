@@ -4,15 +4,17 @@ better_backup:
     一个支持文件去重的高效备份/回档插件
     §d【格式说明】§r
     §7{0}§r 显示帮助信息
-    §7{0} make §e[<message>]§r 创建一个§a备份§r。§e<message>§r为可选注释
-    §7{0} restore §6[<uuid>]§r §c回档§r为备份点§6<uuid>§r的存档。
-    §7{0} remove §6[<uuid>]§r §c删除§r备份点§6<uuid>§r的存档
+    §7{0} make §e[<message>]§r 创建一个§a备份§r。§e<message>§r 为可选注释
+    §7{0} restore §6[<uuid|index>]§r §c回档§r为备份点 §6<uuid|index>§r 的存档。
+    §7{0} remove §6[<uuid|index>]§r §c删除§r备份点 §6<uuid|index>§r 的存档
     §7{0} confirm§r 再次确认是否进行§c回档§r
     §7{0} abort§r 在任何时候键入此指令可中断§c回档§r
-    §7{0} list§r 显示各备份点的存档信息
+    §7{0} list§r 显示各备份点的存档信息以选择 §6[<uuid|index>]§r 备份点
     §7{0} reload§r 重新加载配置文件
     §7{0} reset§r 重置备份数据
-    当 §6<uuid>§r 未设置时默认值为最新备份点的 uuid
+    当 §6<uuid|index>§r 未设置或为 §c1§r 时为最新备份点
+    如 §c2§r 为由新到旧的第二个备份点
+    但此处 §cindex§r 不考虑 §cpage§r，请自行计算
     §7{0} timer§r 显示定时器状态
     §7{0} timer enable§r 启动备份定时器
     §7{0} timer disable§r 关闭备份定时器
@@ -35,8 +37,8 @@ better_backup:
     restore: §c回档§r
 
   remove_backup:
-    success: 删除备份点§6{0}§r§a完成§r
-    fail: "删除备份点§6{0}§r§4失败§r，错误代码: {1}"
+    success: 删除备份点 §6{0}§r§a 完成§r
+    fail: "删除备份点 §6{0}§r§4失败§r，错误代码: {1}"
 
   create_backup:
     start: §a备份§r中...请稍等
@@ -68,10 +70,13 @@ better_backup:
   trigger_abort.abort: 终止操作！
 
   list_backup:
-    title: §d【备份点信息】§r
+    title: §d[备份点信息]§r
     total_space: "备份总占用空间: §a{0}§r"
     restore_hint: 回档至 {0}
     remove_hint: 删除备份 {0}
+    page:
+      page_not_found: 不存在这一页
+      total_info: 共 {0} 页，{1} 个备份点
 
   print_help:
     hotbar: §d【快捷操作】§r
@@ -82,7 +87,7 @@ better_backup:
     click_to_restore:
       text: ">>> §c点我回档至最近的备份§r <<<"
       hover: 也就是回档至第一个备份点
-      command: "{0} back"
+      command: "{0} restore"
 
   unknown_command:
     text: 参数错误！请输入§7{0}§r以获取插件信息
