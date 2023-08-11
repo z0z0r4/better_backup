@@ -5,7 +5,7 @@ Less disk usage, never duplicate files
 
 A plugin that supports efficient backup/rollback with file deduplication
 
-一个支持文件去重的高效备份/回档 MCDR 插件
+一个支持文件去重的高效备份/回档 MCDR 插件，自带定时器
 
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
 
@@ -50,6 +50,16 @@ mcd_root/
 
 当 `<uuid>` 未被指定时默认选择最新备份
 
+`!!bb timer` 显示定时器状态
+
+`!!bb timer enable` 启动备份定时器
+
+`!!bb timer disable` 关闭备份定时器
+
+`!!bb timer set_interval §6<minutes>` 设置备份定时器时间间隔，单位分钟
+
+`!!bb timer reset` 重置备份定时器
+
 ## 配置文件选项说明
 
 配置文件为 `config/better_backup.json`。它会在第一次运行时自动生成
@@ -65,6 +75,18 @@ mcd_root/
 默认值: `True`
 
 控制是否关闭自动保存功能。
+
+## `timer_enabled`
+
+默认值: `True`
+
+是否启动备份定时器。
+
+## `timer_interval`
+
+默认值：`5.0`
+
+备份定时器触发间隔，单位为分钟。
 
 ## `ignored_files` 
 
@@ -120,7 +142,8 @@ mcd_root/
   "abort": 1,
   "reload": 2,
   "list": 0,
-  "reset": 2
+  "reset": 2,
+  "timer": 2
 }
 ```
 
@@ -134,5 +157,6 @@ mcd_root/
 - `reload`: 重新加载操作所需的最低权限级别。
 - `list`: 列出操作所需的最低权限级别。
 - `reset`: 重置操作所需的最低权限级别。
+- `timer`: 操作定时器所需的最低权限级别。
 
 Based on [QuickBackupM](https://github.com/TISUnion/QuickBackupM)
