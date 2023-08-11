@@ -12,6 +12,7 @@ better_backup:
     §7{0} list§r 显示各备份点的存档信息以选择 §6[<uuid|index>]§r 备份点
     §7{0} reload§r 重新加载配置文件
     §7{0} reset§r 重置备份数据
+    §7{0} export §6[<uuid|index>]§r 导出备份数据
     当 §6<uuid|index>§r 未设置或为 §c1§r 时为最新备份点
     如 §c2§r 为由新到旧的第二个备份点
     但此处 §cindex§r 不考虑 §cpage§r，请自行计算
@@ -35,6 +36,8 @@ better_backup:
     remove: §a删除备份点§r
     create: §a备份§r
     restore: §c回档§r
+    reset: §c重置r
+    export: §a导出§r
 
   remove_backup:
     success: 删除备份点 §6{0}§r§a 完成§r
@@ -46,6 +49,8 @@ better_backup:
     abort.no_slot: 未找到可用备份点，§a备份§r中断！
     success: §a备份§r §6{0}§r 完成，耗时§6{1}§r秒 {2}
     fail: §a备份§r失败，错误代码{0}
+  
+  auto_remove: 已自动删除备份点 §e{0}§r
 
   restore_backup:
     echo_action: 准备将存档恢复至备份点 §6{0}§r
@@ -58,6 +63,10 @@ better_backup:
   reset_backup:
     start: 准备重置备份数据
     success: §c重置§r成功
+
+  export_backup:
+    start: 正在导出备份数据
+    success: §a导出§r成功，位于 {0}
 
   confirm_restore.nothing_to_confirm: 没有什么需要确认的
 
@@ -76,7 +85,8 @@ better_backup:
     remove_hint: 删除备份 {0}
     page:
       page_not_found: 不存在这一页
-      total_info: 共 {0} 页，{1} 个备份点
+      total_info: 共 {0} 个备份点
+      previous_page: 上一页
 
   print_help:
     hotbar: §d【快捷操作】§r

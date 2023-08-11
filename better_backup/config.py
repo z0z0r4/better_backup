@@ -16,6 +16,8 @@ class Configuration(Serializable):
     backup_data_path: str = "./better_backup"
     server_path: str = "./server"
     overwrite_backup_folder: str = "overwrite"
+    export_backup_folder: str = "export_backup"
+    backup_count_limit: int = 20
     # 0:guest 1:user 2:helper 3:admin 4:owner
     minimum_permission_level: Dict[str, int] = {
         "make": 1,
@@ -26,7 +28,8 @@ class Configuration(Serializable):
         "reload": 2,
         "list": 0,
         "reset": 2,
-        "timer": 2
+        "timer": 2,
+        "export": 4
     }
     timer_enabled: bool = True
     timer_interval: float = 5.0  # minutes

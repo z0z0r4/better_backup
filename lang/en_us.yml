@@ -12,6 +12,7 @@ better_backup:
     §7{0} list [<page>]§r Display backup information to choise backups
     §7{0} reload§r Reload config file
     §7{0} reset§r Reset backup data
+    §7{0} export §6[<uuid|index>]§r Export backup data
     Latest backup point when §6<uuid|index>§r is not set or §c1§r
     For example, §c2§r is the second backup point by the order of creation date
     But here §cindex§r does not consider §cpage§r, please calculate it yourself
@@ -34,6 +35,8 @@ better_backup:
     remove: §aDeleting backup§r
     create: §aBacking up§r
     restore: §cRestoring§r
+    reset: §cResetingr
+    export: §aExporting§r
 
   remove_backup:
     success: Backup §6{0}§r delete §asuccess§r
@@ -58,6 +61,12 @@ better_backup:
     start: Gonna reset the backup data
     success: §cReset§r successfully
 
+  export_backup:
+    start: Exporting the backup data
+    success: §aExport§r successfully, at {0}
+
+  auto_remove: Deleted backup §e{0}§r
+
   confirm_restore.nothing_to_confirm: Nothing to confirm
 
   do_restore:
@@ -75,7 +84,7 @@ better_backup:
     total_space: "Total space consumed: §a{0}§r"
     page:
       page_not_found: Page Not Found
-      total_info: Total {0} pages, {1} backups
+      total_info: Total {0} backups
   print_help:
     hotbar: §d[Hotbar]§r
     click_to_create:

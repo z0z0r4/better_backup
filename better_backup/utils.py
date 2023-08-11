@@ -11,7 +11,7 @@ from typing import Optional
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
-TEMP_DIR = "temp"
+TEMP_DIR = "overwrite"
 
 
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
@@ -240,14 +240,14 @@ def check_backup_uuid_available(backup_uuid: str, metadata_dir: str) -> bool:
         return False
 
 
-def scan_backup_info(backup_info: dict):
+def scan_backup_info_get_md5_set(backup_info: dict):
     md5_set = set()
     for info in backup_info:
         if backup_info[info]["type"] == "file":
             hash = backup_info[info]["md5"]
             md5_set.add(hash)
         elif backup_info[info]["type"] == "dir":
-            kid_md5_set = scan_backup_info(backup_info[info]["files"])
+            kid_md5_set = scan_backup_info_get_md5_set(backup_info[info]["files"])
             md5_set = md5_set.union(kid_md5_set)
     return md5_set
 
@@ -255,7 +255,7 @@ def scan_backup_info(backup_info: dict):
 def add_cache_index_count(metadata_dir: str, backup_info: dict):
     with open(os.path.join(metadata_dir, f"cache_index.json"), encoding="UTF-8") as f:
         cache_info = json.load(f)
-        md5_set = scan_backup_info(backup_info["backup_files"])
+        md5_set = scan_backup_info_get_md5_set(backup_info["backup_files"])
         for md5 in md5_set:
             if md5 in cache_info:
                 cache_info[md5] += 1
@@ -270,7 +270,7 @@ def add_cache_index_count(metadata_dir: str, backup_info: dict):
 def subtract_cache_index_count(metadata_dir: str, cache_dir: str, backup_info: dict):
     with open(os.path.join(metadata_dir, f"cache_index.json"), encoding="UTF-8") as f:
         cache_info = json.load(f)
-        md5_set = scan_backup_info(backup_info["backup_files"])
+        md5_set = scan_backup_info_get_md5_set(backup_info["backup_files"])
         for md5 in md5_set:
             cache_info[md5] -= 1
             if cache_info[md5] == 0:
@@ -300,6 +300,7 @@ def make_backup_util(
             cache_folder=cache_dir,
             ignored_files=config.ignored_files,
             ignored_extensions=config.ignored_extensions,
+            ignored_folders=config.ignored_folders
         )
         total_files_info[src_dir] = {
             "type": "dir",
@@ -320,8 +321,7 @@ def make_backup_util(
 
 
 def restore_backup_util(
-    backup_uuid: str, metadata_dir: str, dst_dir: str, config: Configuration
-):
+    backup_uuid: str, metadata_dir: str, cache_dir: str, dst_dir: str):
     backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
 
     def restore(dst_dir: str, cache_dir: str, backup_info: dict):
@@ -336,7 +336,6 @@ def restore_backup_util(
             elif backup_info[info]["type"] == "file":
                 copyfile(
                     os.path.join(
-                        config.backup_data_path,
                         cache_dir,
                         backup_info[info]["md5"][:2],
                         backup_info[info]["md5"][2:],
@@ -347,7 +346,7 @@ def restore_backup_util(
     restore(
         dst_dir=dst_dir,
         backup_info=backup_info["backup_files"],
-        cache_dir=CACHE_DIR,
+        cache_dir=cache_dir,
     )
     return backup_info
 
@@ -358,3 +357,25 @@ def remove_backup_util(backup_uuid: str, metadata_dir: str, cache_dir: str):
     os.remove(
         os.path.join(metadata_dir, f"backup_{backup_info['backup_uuid']}_info.json")
     )
+
+def auto_remove_util(metadata_dir: str, cache_dir: str, limit: int) -> list:
+    all_backup_info = get_all_backup_info_sort_by_timestamp(metadata_dir)
+    count = len(all_backup_info)
+    removed_uuids = []
+    if count > limit:
+        for backup_info in all_backup_info[limit:]:
+            remove_backup_util(backup_uuid=backup_info["backup_uuid"],
+                               metadata_dir=metadata_dir,
+                               cache_dir=cache_dir)
+            removed_uuids.append(backup_info["backup_uuid"])
+    return removed_uuids
+
+def export_backup_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str):
+    if not os.path.exists(dst_dir):
+        os.makedirs(dst_dir)
+    rmtree(dst_dir)
+    backup_info = get_backup_info(backup_uuid, metadata_dir=metadata_dir)
+    restore_backup_util(backup_uuid=backup_info["backup_uuid"],
+                        metadata_dir=metadata_dir,
+                        cache_dir=cache_dir,
+                        dst_dir=dst_dir)
