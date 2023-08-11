@@ -25,6 +25,7 @@ abort_restore = False
 timer: Timer
 timer_run_flag: bool = False
 
+
 def init_folder(data_dir: str):
     os.makedirs(os.path.join(data_dir, METADATA_DIR), exist_ok=True)
     if not os.path.exists(os.path.join(data_dir, CACHE_DIR)):
@@ -53,7 +54,8 @@ def print_unknown_argument_message(source: CommandSource, error: UnknownArgument
         source,
         command_run(
             tr("unknown_command.text", PREFIX), tr("unknown_command.hover"), PREFIX
-        ), reply_source=True
+        ),
+        reply_source=True,
     )
 
 
@@ -70,7 +72,9 @@ def single_op(name: RTextBase):
                 finally:
                     operation_lock.release()
             else:
-                print_message(source, tr("lock.warning", operation_name), reply_source=True)
+                print_message(
+                    source, tr("lock.warning", operation_name), reply_source=True
+                )
 
         return wrap
 
@@ -91,44 +95,30 @@ def save_config():
     server_inst.save_config_simple(config, CONFIG_FILE, in_data_folder=False)
 
 
-def on_load(server: PluginServerInterface, old):
-    global operation_lock, server_inst, HelpMessage, timer, timer_run_flag
-    server_inst = server
-    load_config()
-    if hasattr(old, "operation_lock") and type(old.operation_lock) == type(
-        operation_lock
-    ):
-        operation_lock = old.operation_lock
-    server.register_help_message(PREFIX, "Show the usage of Better Backup")
-
-    meta = server.get_self_metadata()
-    HelpMessage = tr("help_message", PREFIX, meta.name, meta.version)
-    timer = Timer(server=server_inst)
-    timer_set_enabled(server.get_plugin_command_source(), config.enabled_timer)
-    timer_run_flag = True
-    timer_run(timer)
-    init_folder(config.backup_data_path)
-    register_command(server)
-    server.logger.info("Better Backup Loaded!")
-
-
 def show_timer_status(source: CommandSource):
-    source.reply(Timer.tr("status.config_enabled", config.enabled_timer))
-    source.reply(Timer.tr("status.clock_enabled", timer.is_enabled))
-    source.reply(Timer.tr("status.clock_interval", round(config.timer_interval, 2)))
+    print_message(
+        source, Timer.tr("status.clock_enabled", timer.is_enabled), reply_source=True
+    )
+    print_message(
+        source,
+        Timer.tr("status.clock_interval", round(config.timer_interval, 2)),
+        reply_source=True,
+    )
     if timer.is_enabled:
-        source.reply(timer.get_next_backup_message())
+        print_message(source, timer.get_next_backup_message(), reply_source=True)
 
 
-def timer_set_enabled(source: CommandSource, value: bool):
-    config.enabled_timer = value
+def timer_set_enabled(source: CommandSource, value: bool, echo_to_player: bool = True):
+    config.timer_enabled = value
     timer.set_enabled(value)
     save_config()
-    source.reply(
+    print_message(
+        source,
         Timer.tr(
             "set_enabled.timer",
             Timer.tr("set_enabled.start") if value else Timer.tr("set_enabled.stop"),
-        )
+        ),
+        only_server=not echo_to_player,
     )
     if value:
         timer.broadcast_next_backup_time()
@@ -182,73 +172,6 @@ def trigger_abort(source: CommandSource):
     print_message(source, "Operation terminated!", reply_source=True)
 
 
-def register_command(server: PluginServerInterface):
-    def get_literal_node(literal):
-        lvl = config.minimum_permission_level.get(literal, 0)
-        return (
-            Literal(literal)
-            .requires(lambda src: src.has_permission(lvl))
-            .on_error(
-                RequirementNotMet,
-                lambda src: print_message(src, tr("command.permission_denied"), reply_source=True),
-                handled=True,
-            )
-        )
-
-    server.register_command(
-        Literal(PREFIX)
-        .runs(lambda src: print_help_message(src))
-        .on_error(UnknownArgument, print_unknown_argument_message, handled=True)
-        .then(
-            get_literal_node("make")
-            .runs(lambda src: create_backup(src, None))
-            .then(
-                GreedyText("message").runs(
-                    lambda src, ctx: create_backup(src, ctx["message"])
-                )
-            )
-        )
-        .then(
-            get_literal_node("restore")
-            .runs(lambda src: restore_backup(src, None))
-            .then(
-                GreedyText("uuid").runs(
-                    lambda src, ctx: restore_backup(src, ctx["uuid"])
-                )
-            )
-        )
-        .then(
-            get_literal_node("remove")
-            .runs(lambda src: remove_backup(src, None))
-            .then(
-                GreedyText("uuid").runs(
-                    lambda src, ctx: remove_backup(src, ctx["uuid"])
-                )
-            )
-        )
-        .then(get_literal_node("list").runs(lambda src: list_backups(src)))
-        .then(get_literal_node("confirm").runs(confirm_restore))
-        .then(get_literal_node("abort").runs(trigger_abort))
-        .then(get_literal_node("reload").runs(load_config))
-        .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
-        .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
-        .then(
-            get_literal_node("timer")
-            .runs(lambda src: show_timer_status(src))
-            .then(Literal("enable").runs(lambda src: timer_set_enabled(src, True)))
-            .then(Literal("disable").runs(lambda src: timer_set_enabled(src, False)))
-            .then(
-                Literal("set_interval").then(
-                    Float("interval")
-                    .at_min(0.1)
-                    .runs(lambda src, ctx: timer_set_interval(src, ctx["interval"]))
-                )
-            )
-            .then(Literal("reset").runs(lambda src: reset_timer(src)))
-        )
-    )
-
-
 @new_thread("BB - create")
 def create_backup(source: CommandSource, message: Optional[str]):
     do_create(source, message)
@@ -288,7 +211,6 @@ def do_create(source: CommandSource, message: Optional[str]):
                 format_dir_size(backup_info["backup_size"]), message
             ),
         ),
-        tell=False,
     )
     if config.turn_off_auto_save:
         source.get_server().execute("save-on")
@@ -306,11 +228,17 @@ def remove_backup(source: CommandSource, uuid: Optional[str]):
         if uuid is None:
             print_message(source, tr("no_one_backup"), reply_source=True)
             return
-    elif not check_backup_uuid_available(
-        backup_uuid=uuid,
-        metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
-    ):
-        print_message(source, tr("unknown_slot", uuid), reply_source=True)
+    else:
+        uuid = get_backup_uuid_by_keyword(
+            keyword=uuid,
+            metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
+        )
+        if uuid == 0:
+            print_message(source, tr("no_one_backup"), reply_source=True)
+            return
+        elif uuid is None:
+            print_message(source, tr("unknown_backup", uuid), reply_source=True)
+            return
 
     all_backup_info = get_all_backup_info(
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR)
@@ -335,15 +263,19 @@ def restore_backup(source: CommandSource, uuid: Optional[str]):
         if uuid is None:
             print_message(source, tr("no_one_backup"), reply_source=True)
             return
-        uuid_selected = uuid
-    elif check_backup_uuid_available(
-        backup_uuid=uuid,
-        metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
-    ):
-        uuid_selected = uuid
     else:
-        print_message(source, tr("unknown_slot", uuid), reply_source=True)
-        return
+        uuid = get_backup_uuid_by_keyword(
+            keyword=uuid,
+            metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
+        )
+        if uuid == 0:
+            print_message(source, tr("no_one_backup"), reply_source=True)
+            return
+        elif uuid is None:
+            print_message(source, tr("unknown_backup", uuid), reply_source=True)
+            return
+    uuid_selected = uuid
+
     print_message(source, tr("restore_backup.echo_action", uuid_selected))
     text = RTextList(
         RText(tr("restore_backup.confirm_hint", PREFIX))
@@ -363,7 +295,6 @@ def restore_backup(source: CommandSource, uuid: Optional[str]):
     print_message(
         source,
         text,
-        tell=False,
     )
 
 
@@ -372,7 +303,9 @@ def confirm_restore(source: CommandSource):
     # !!bb confirm
     global uuid_selected
     if uuid_selected is None:
-        print_message(source, tr("confirm_restore.nothing_to_confirm"), reply_source=True)
+        print_message(
+            source, tr("confirm_restore.nothing_to_confirm"), reply_source=True
+        )
         return
     # !!bb abord
     print_message(source, tr("do_restore.countdown.intro"))
@@ -388,7 +321,6 @@ def confirm_restore(source: CommandSource):
                 tr("do_restore.countdown.hover"),
                 "{} abort".format(PREFIX),
             ),
-            tell=False,
         )
         for i in range(10):
             time.sleep(0.1)
@@ -422,9 +354,7 @@ def do_restore(source: CommandSource):
             config=config,
         )
         source.get_server().start()
-        print_message(
-            source, tr("restore_backup.success", backup_info["backup_uuid"])
-        )
+        print_message(source, tr("restore_backup.success", backup_info["backup_uuid"]))
     except:
         server_inst.logger.exception(
             tr(
@@ -441,44 +371,62 @@ def do_restore(source: CommandSource):
         uuid_selected = None
 
 
-def list_backups(source: CommandSource):
+LIST_PAGE_SIZE = 10
+
+
+def list_backups(source: CommandSource, page_num: int = 1):
     all_backup_info = get_all_backup_info_sort_by_timestamp(
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR)
     )
     if len(all_backup_info) == 0:
         text = RTextList(tr("no_one_backup") + "\n")
         header_text = tr("list_backup.title") + "\n"
+    elif LIST_PAGE_SIZE * (page_num - 1) >= len(all_backup_info) or page_num <=0:  # 不存在这一页
+        print_message(source, tr("list_backup.page.page_not_found"), reply_source=True)
+        return
     else:
         text = RTextList()
         header_text = tr("list_backup.title") + "\n"
-        for backup_info in all_backup_info:
-            text += RTextList(
-                RText(f'[§e{backup_info["backup_uuid"]}§r] '),
-                RText("[▷] ", color=RColor.green)
-                .h(tr("list_backup.restore_hint", backup_info["backup_uuid"]))
-                .c(
-                    RAction.suggest_command,
-                    f'{PREFIX} restore {backup_info["backup_uuid"]}',
-                ),
-                RText("[x] ", color=RColor.green)
-                .h(tr("list_backup.remove_hint", backup_info["backup_uuid"]))
-                .c(
-                    RAction.suggest_command,
-                    f'{PREFIX} remove {backup_info["backup_uuid"]}',
-                ),
-                RText(
-                    backup_info["backup_time"]
-                    + " §l*§r "
-                    + format_dir_size(backup_info["backup_size"]).ljust(10)
-                    + " §l*§r "
-                    + (
-                        tr("empty_comment")
-                        if backup_info["backup_message"] is None
-                        else backup_info["backup_message"]
+        for _i in range(((page_num - 1) * LIST_PAGE_SIZE), page_num * LIST_PAGE_SIZE):
+            if _i <= (len(all_backup_info)-1):
+                backup_info = all_backup_info[_i]
+                text += RTextList(
+                    RText(f'[§e{_i+1}§r] [§e{backup_info["backup_uuid"]}§r] '),
+                    RText("[▷] ", color=RColor.green)
+                    .h(tr("list_backup.restore_hint", backup_info["backup_uuid"]))
+                    .c(
+                        RAction.suggest_command,
+                        f'{PREFIX} restore {backup_info["backup_uuid"]}',
+                    ),
+                    RText("[x] ", color=RColor.green)
+                    .h(tr("list_backup.remove_hint", backup_info["backup_uuid"]))
+                    .c(
+                        RAction.suggest_command,
+                        f'{PREFIX} remove {backup_info["backup_uuid"]}',
+                    ),
+                    RText(
+                        backup_info["backup_time"]
+                        + " §l*§r "
+                        + format_dir_size(backup_info["backup_size"]).ljust(10)
+                        + " §l*§r "
+                        + (
+                            tr("empty_comment")
+                            if backup_info["backup_message"] is None
+                            else backup_info["backup_message"]
+                        )
                     )
+                    + "\n",
                 )
-                + "\n",
-            )
+            else:
+                break
+        total_info = RTextList(
+            tr(
+                "list_backup.page.total_info",
+                int(len(all_backup_info) / LIST_PAGE_SIZE) + 1,
+                len(all_backup_info),
+            ) + "\n"
+        )
+        text += total_info
     total_space_text = RText(
         tr(
             "list_backup.total_space",
@@ -487,7 +435,9 @@ def list_backups(source: CommandSource):
             ),
         ),
     )
-    print_message(source, header_text + text + total_space_text, prefix="", reply_source=True)
+    print_message(
+        source, header_text + text + total_space_text, prefix="", reply_source=True
+    )
 
 
 @new_thread("BB - help")
@@ -503,7 +453,8 @@ def print_help_message(source: CommandSource):
                     RText(line).set_click_event(
                         RAction.suggest_command, prefix.group()
                     ),
-                    prefix="", reply_source=True
+                    prefix="",
+                    reply_source=True,
                 )
             else:
                 print_message(source, line, prefix="", reply_source=True)
@@ -524,7 +475,8 @@ def print_help_message(source: CommandSource):
                 RAction.suggest_command,
                 tr("print_help.click_to_restore.command", PREFIX).to_plain_text(),
             ),
-            prefix="", reply_source=True
+            prefix="",
+            reply_source=True,
         )
 
 
@@ -537,6 +489,106 @@ def reset_cache(source: CommandSource):
     os.makedirs(backup_data_path)
     init_folder(data_dir=backup_data_path)
     print_message(source, tr("reset_backup.success"))
+
+
+def register_command(server: PluginServerInterface):
+    def get_literal_node(literal):
+        lvl = config.minimum_permission_level.get(literal, 0)
+        return (
+            Literal(literal)
+            .requires(lambda src: src.has_permission(lvl))
+            .on_error(
+                RequirementNotMet,
+                lambda src: print_message(
+                    src, tr("command.permission_denied"), reply_source=True
+                ),
+                handled=True,
+            )
+        )
+
+    server.register_command(
+        Literal(PREFIX)
+        .runs(lambda src: print_help_message(src))
+        .on_error(UnknownArgument, print_unknown_argument_message, handled=True)
+        .then(
+            get_literal_node("make")
+            .runs(lambda src: create_backup(src, None))
+            .then(
+                GreedyText("message").runs(
+                    lambda src, ctx: create_backup(src, ctx["message"])
+                )
+            )
+        )
+        .then(
+            get_literal_node("restore")
+            .runs(lambda src: restore_backup(src, None))
+            .then(
+                GreedyText("uuid").runs(
+                    lambda src, ctx: restore_backup(src, ctx["uuid"])
+                )
+            )
+        )
+        .then(
+            get_literal_node("remove")
+            .runs(lambda src: remove_backup(src, None))
+            .then(
+                GreedyText("uuid").runs(
+                    lambda src, ctx: remove_backup(src, ctx["uuid"])
+                )
+            )
+        )
+        .then(
+            get_literal_node("list")
+            .runs(lambda src: list_backups(src))
+            .then(
+                Integer("page").runs(
+                    lambda src, ctx: list_backups(src, ctx["page"])
+                )
+            )
+        )
+        .then(get_literal_node("confirm").runs(confirm_restore))
+        .then(get_literal_node("abort").runs(trigger_abort))
+        .then(get_literal_node("reload").runs(load_config))
+        .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
+        .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
+        .then(
+            get_literal_node("timer")
+            .runs(lambda src: show_timer_status(src))
+            .then(Literal("enable").runs(lambda src: timer_set_enabled(src, True)))
+            .then(Literal("disable").runs(lambda src: timer_set_enabled(src, False)))
+            .then(
+                Literal("set_interval").then(
+                    Float("interval")
+                    .at_min(0.1)
+                    .runs(lambda src, ctx: timer_set_interval(src, ctx["interval"]))
+                )
+            )
+            .then(Literal("reset").runs(lambda src: reset_timer(src)))
+        )
+    )
+
+
+def on_load(server: PluginServerInterface, old):
+    global operation_lock, server_inst, HelpMessage, timer, timer_run_flag
+    server_inst = server
+    load_config()
+    if hasattr(old, "operation_lock") and type(old.operation_lock) == type(
+        operation_lock
+    ):
+        operation_lock = old.operation_lock
+    server.register_help_message(PREFIX, "Show the usage of Better Backup")
+
+    meta = server.get_self_metadata()
+    HelpMessage = tr("help_message", PREFIX, meta.name, meta.version)
+    timer = Timer(server=server_inst)
+    timer_set_enabled(
+        server.get_plugin_command_source(), config.timer_enabled, echo_to_player=False
+    )
+    timer_run_flag = True
+    timer_run(timer)
+    init_folder(config.backup_data_path)
+    register_command(server)
+    server.logger.info("Better Backup Loaded!")
 
 
 def on_info(server: PluginServerInterface, info: Info):
@@ -553,6 +605,7 @@ def on_unload(server):
     global abort_restore, timer_run_flag
     abort_restore = True
     timer_run_flag = False
+
 
 def on_remove(server):
     global abort_restore, timer_run_flag

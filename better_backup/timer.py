@@ -48,11 +48,10 @@ class Timer():
         self.reset_timer()
 
     def broadcast(self, message):
-        rtext = RTextList("[{}] ".format("Timer"), message)
         if self.server.is_server_startup():
-            print_message(self.server.get_plugin_command_source(), rtext)
+            print_message(self.server.get_plugin_command_source(), message)
         else:
-            print_message(self.server.get_plugin_command_source(), rtext, only_server=True)
+            print_message(self.server.get_plugin_command_source(), message, only_server=True)
 
     def set_enabled(self, value: bool = True):
         self.is_enabled = value

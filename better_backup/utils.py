@@ -13,12 +13,21 @@ METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
 TEMP_DIR = "temp"
 
+
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(
         "better_backup.{}".format(translation_key), *args
     )
 
-def print_message(source: CommandSource, msg, only_player=False, only_server=False, reply_source=False, prefix="§a[Better Backup]§r "):
+
+def print_message(
+    source: CommandSource,
+    msg,
+    only_player=False,
+    only_server=False,
+    reply_source=False,
+    prefix="§a[Better Backup]§r ",
+):
     msg = RTextList(prefix, msg)
     if reply_source:
         source.reply(msg)
@@ -29,13 +38,14 @@ def print_message(source: CommandSource, msg, only_player=False, only_server=Fal
     else:
         source.get_server().broadcast(msg)
 
+
 def format_dir_size(size: int) -> str:
     if size < 2**30:
         return "{} MB".format(round(size / 2**20, 2))
     else:
         return "{} GB".format(round(size / 2**30, 2))
-    
-    
+
+
 def walk_and_cache_files(
     dir_path: str,
     cache_folder: str,
@@ -207,6 +217,20 @@ def get_latest_backup_uuid(metadata_dir: str) -> Optional[str]:
     if result != []:
         return result[0]["backup_uuid"]
 
+
+def get_backup_uuid_by_keyword(keyword: str, metadata_dir: str):
+    try:
+        if len(keyword) == 6:
+            if check_backup_uuid_available(backup_uuid=keyword, metadata_dir=metadata_dir):
+                return keyword
+        elif len(keyword) <6:
+            all_info = get_all_backup_info_sort_by_timestamp(metadata_dir=metadata_dir)
+            if len(all_info) == 0:
+                return 0
+            elif len(all_info) >= (int(keyword)) and int(keyword)>0:
+                return all_info[int(keyword)-1]["backup_uuid"]
+    except:
+        return
 
 def check_backup_uuid_available(backup_uuid: str, metadata_dir: str) -> bool:
     try:
