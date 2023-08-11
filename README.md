@@ -7,7 +7,7 @@ A plugin that supports efficient backup/rollback with file deduplication
 
 一个支持文件去重的高效备份/回档 MCDR 插件，自带定时器
 
-![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
+![image](https://github.com/z0z0r4/better_backup/assets/78744121/8e0b42d9-89a8-4412-8f71-56b828a4ab80)
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
 ```
