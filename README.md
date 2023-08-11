@@ -1,4 +1,5 @@
 # Better_Backup
+
 Less disk usage, never duplicate files
 
 更少的磁盘占用，永远不会有重复文件。
@@ -10,6 +11,7 @@ A plugin that supports efficient backup/rollback with file deduplication
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/8e0b42d9-89a8-4412-8f71-56b828a4ab80)
 
 基准测试见 https://github.com/z0z0r4/better_backup/issues/5 结论
+
 - 首次备份时无论如何 Better_Backup 都会慢于 QucikBackupM，原因在于逻辑不同
 - 在存档较小时 QucikBackupM 速率占优，但此时耗时基本上都很小，区别不大
 - 在存档较大，如 10G 左右，QucikBackupM 与 Better_Backup 速率基本持平，耗时 30s 左右
@@ -17,6 +19,7 @@ A plugin that supports efficient backup/rollback with file deduplication
 - **然而速率总体基本持平的事实立足于占用空间原小于 QucikBackupM 的基础上，所以推荐使用 Better_Backup**
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
+
 ```
 mcd_root/
     server.py
@@ -33,7 +36,6 @@ mcd_root/
         temp/
             world/
 ```
-
 
 ## 命令格式说明
 
@@ -55,6 +57,8 @@ mcd_root/
 
 `!!bb reset` 重置存档数据
 
+`!!bb export [<uuid|index>]` 导出备份数据
+
 当 `<uuid|index>` 未设置或为 1 时为最新备份点的 uuid
 
 如 `2` 为由新到旧的第二个备份点
@@ -75,13 +79,13 @@ mcd_root/
 
 配置文件为 `config/better_backup.json`。它会在第一次运行时自动生成
 
-## `size_display` 
+## `size_display`
 
 默认值: `True`
 
 控制是否显示文件大小信息。
 
-## `turn_off_auto_save` 
+## `turn_off_auto_save`
 
 默认值: `True`
 
@@ -95,55 +99,62 @@ mcd_root/
 
 ## `timer_interval`
 
-默认值：`5.0`
+默认值: `5.0`
 
 备份定时器触发间隔，单位为分钟。
 
-## `ignored_files` 
+## `ignored_files`
 
 默认值: `["session.lock"]`
 
 指定要忽略的文件列表。
 
-## `ignored_folders` 
+## `ignored_folders`
 
 默认值: `[]`
 
 指定要忽略的文件夹列表。
 
-## `ignored_extensions` 
+## `ignored_extensions`
 
 默认值: `[".lock"]`
 
 指定要忽略的文件扩展名列表。
 
-## `world_names` 
+## `world_names`
 
 默认值: `['world']`
 
 指定世界名称列表。
 
-## `backup_data_path` 
+## `backup_data_path`
 
 默认值: `"./better_backup"`
 
 指定备份数据的路径。
 
-## `server_path` 
+## `server_path`
 
 默认值: `"./server"`
 
 指定服务器路径。
 
-## `overwrite_backup_folder` 
+## `overwrite_backup_folder`
 
 默认值: `"overwrite"`
 
 指定覆盖备份文件夹名称。
 
-## `minimum_permission_level` 
+## `backup_count_limit`
 
-默认值: 
+默认值: `20`
+
+指定自动删除备份点的保留数量
+
+## `minimum_permission_level`
+
+默认值:
+
 ```json
 {
   "make": 1,
