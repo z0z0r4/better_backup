@@ -1,8 +1,9 @@
 from typing import List, Dict
+import os
 
 from mcdreforged.api.utils.serializer import Serializable
 
-
+CONFIG_FILE = os.path.join("config", "Better_Backup.json")
 class Configuration(Serializable):
     size_display: bool = True
     turn_off_auto_save: bool = True
@@ -25,4 +26,7 @@ class Configuration(Serializable):
         "reload": 2,
         "list": 0,
         "reset": 2,
+        "timer": 2
     }
+    timer_enabled: bool = True
+    timer_interval: float = 5.0  # minutes

@@ -13,7 +13,29 @@ METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
 TEMP_DIR = "temp"
 
+def tr(translation_key: str, *args) -> RTextMCDRTranslation:
+    return ServerInterface.get_instance().rtr(
+        "better_backup.{}".format(translation_key), *args
+    )
 
+def print_message(source: CommandSource, msg, only_player=False, only_server=False, reply_source=False, prefix="§a[Better Backup]§r "):
+    msg = RTextList(prefix, msg)
+    if reply_source:
+        source.reply(msg)
+    elif only_player:
+        source.get_server().say(msg)
+    elif only_server:
+        source.get_server().logger.info(msg)
+    else:
+        source.get_server().broadcast(msg)
+
+def format_dir_size(size: int) -> str:
+    if size < 2**30:
+        return "{} MB".format(round(size / 2**20, 2))
+    else:
+        return "{} GB".format(round(size / 2**30, 2))
+    
+    
 def walk_and_cache_files(
     dir_path: str,
     cache_folder: str,

@@ -13,6 +13,11 @@ better_backup:
     §7{0} reload§r Reload config file
     §7{0} reset§r Reset backup data
     When §6<uuid>§r is not set the default value is the latest backup uuid
+    §7{0} timer§r Show status of the bacckup timer
+    §7{0} timer enable§r Start the backup timer
+    §7{0} timer disable§r Disable the backup timer
+    §7{0} timer set_interval §6<minutes>§r Set the backup timer interval in minutes
+    §7{0} timer reset§r Reset the backup timer
 
   second: "{0} seconds"
   minute: "{0} minutes"
@@ -82,8 +87,27 @@ better_backup:
     text: Unknown command, input §7{0}§r for more information
     hover: Click to see help
   command:
-    permission_denied: Permission Denied
-    wrong_slot: Wrong Slot Number
-  register:
-    summory_help: §aback up§r/§crestore§r your world with §6{0}§r backups
-    show_help: Click to see help
+    permission_denied: §cPermission Denied§r
+    
+  timer:
+    set_interval: "Timer trigger interval has been set to §6{0}§r minutes"
+    reset_timer: Timer resetted
+    get_next_backup_message: "Time for the next auto backup: §3{0}§r"
+    on_backup_created: New backup detected, timer reset
+    on_backup_succeed: Timed backup succeeded
+    on_backup_failed: Timed backup failed, something might have gone wrong
+
+    set_enabled:
+      timer: "Timer has been {0}"
+      start: started
+      stop: stopped
+
+    run:
+      trigger_time: "Timed backup trigger every §6{0}§r minutes"
+      timed_backup: "{0} Scheduled Backup"
+
+    status:
+      config_enabled: 'Enable: {0}'
+      clock_enabled: 'Clock enable: {0}'
+      clock_interval: 'Clock interval: {0}min'
+      has_online_player: 'Has online player: {0}'

@@ -13,6 +13,11 @@ better_backup:
     §7{0} reload§r 重新加载配置文件
     §7{0} reset§r 重置备份数据
     当 §6<uuid>§r 未设置时默认值为最新备份点的 uuid
+    §7{0} timer§r 显示定时器状态
+    §7{0} timer enable§r 启动备份定时器
+    §7{0} timer disable§r 关闭备份定时器
+    §7{0} timer set_interval §6<minutes>§r 设置备份定时器时间间隔，单位分钟
+    §7{0} timer reset§r 重置备份定时器
 
   second: "{0}秒"
   minute: "{0}分钟"
@@ -83,8 +88,27 @@ better_backup:
     text: 参数错误！请输入§7{0}§r以获取插件信息
     hover: 点击查看帮助
   command:
-    permission_denied: 权限不足
-    wrong_slot: 备份点输入错误
-  register:
-    summory_help: §a备份§r/§c回档§r，§6{0}§r备份点
-    show_help: 点击查看帮助信息
+    permission_denied: §c权限不足§r
+
+  timer:
+    set_interval: "定时器触发间隔已设置为§6{0}§r分钟"
+    reset_timer: 定时器已重置
+    get_next_backup_message: "下次自动备份时间: §3{0}§r"
+    on_backup_created: 检测到新增的备份，重置定时器
+    on_backup_succeed: 定时备份成功
+    on_backup_failed: 定时备份失败，可能发生了某些错误
+
+    set_enabled:
+      timer: "定时器已{0}"
+      start: 启动
+      stop: 关闭
+
+    run:
+      trigger_time: "每§6{0}§r分钟一次的定时备份触发"
+      timed_backup: "{0} 定时备份"
+
+    status:
+      config_enabled: '插件启用: {0}'
+      clock_enabled: '时钟启用: {0}'
+      clock_interval: '时钟间隔: {0}min'
+      has_online_player: '存在在线玩家: {0}'

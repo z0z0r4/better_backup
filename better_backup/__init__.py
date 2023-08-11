@@ -10,16 +10,20 @@ from threading import Lock
 import functools
 
 from better_backup.utils import *
+from better_backup.timer import Timer
+from better_backup.config import CONFIG_FILE
 
 PREFIX = "!!bb"
+TimerPREFIX = "!!bb timer"
 
-CONFIG_FILE = os.path.join("config", "Better_Backup.json")
+
 operation_lock = Lock()
 operation_name = RText("?")
 game_saved = False
 uuid_selected = None
 abort_restore = False
-
+timer: Timer
+timer_run_flag: bool = False
 
 def init_folder(data_dir: str):
     os.makedirs(os.path.join(data_dir, METADATA_DIR), exist_ok=True)
@@ -39,30 +43,9 @@ def init_folder(data_dir: str):
             json.dump({}, f)
 
 
-def format_dir_size(size: int) -> str:
-    if size < 2**30:
-        return "{} MB".format(round(size / 2**20, 2))
-    else:
-        return "{} GB".format(round(size / 2**30, 2))
-
-
-def tr(translation_key: str, *args) -> RTextMCDRTranslation:
-    return ServerInterface.get_instance().rtr(
-        "better_backup.{}".format(translation_key), *args
-    )
-
-
 def command_run(message: Any, text: Any, command: str) -> RTextBase:
     fancy_text = message.copy() if isinstance(message, RTextBase) else RText(message)
     return fancy_text.set_hover_text(text).set_click_event(RAction.run_command, command)
-
-
-def print_message(source: CommandSource, msg, tell=True, prefix="§a[Better Backup]§r "):
-    msg = RTextList(prefix, msg)
-    if source.is_player and not tell:
-        source.get_server().say(msg)
-    else:
-        source.reply(msg)
 
 
 def print_unknown_argument_message(source: CommandSource, error: UnknownArgument):
@@ -70,7 +53,7 @@ def print_unknown_argument_message(source: CommandSource, error: UnknownArgument
         source,
         command_run(
             tr("unknown_command.text", PREFIX), tr("unknown_command.hover"), PREFIX
-        ),
+        ), reply_source=True
     )
 
 
@@ -87,18 +70,11 @@ def single_op(name: RTextBase):
                 finally:
                     operation_lock.release()
             else:
-                print_message(source, tr("lock.warning", operation_name))
+                print_message(source, tr("lock.warning", operation_name), reply_source=True)
 
         return wrap
 
     return wrapper
-
-
-def trigger_abort(source: CommandSource):
-    global abort_restore, uuid_selected
-    abort_restore = True
-    uuid_selected = None
-    print_message(source, "Operation terminated!", tell=False)
 
 
 def load_config():
@@ -111,8 +87,12 @@ def load_config():
     )
 
 
+def save_config():
+    server_inst.save_config_simple(config, CONFIG_FILE, in_data_folder=False)
+
+
 def on_load(server: PluginServerInterface, old):
-    global operation_lock, server_inst, HelpMessage
+    global operation_lock, server_inst, HelpMessage, timer, timer_run_flag
     server_inst = server
     load_config()
     if hasattr(old, "operation_lock") and type(old.operation_lock) == type(
@@ -123,10 +103,83 @@ def on_load(server: PluginServerInterface, old):
 
     meta = server.get_self_metadata()
     HelpMessage = tr("help_message", PREFIX, meta.name, meta.version)
-
+    timer = Timer(server=server_inst)
+    timer_set_enabled(server.get_plugin_command_source(), config.enabled_timer)
+    timer_run_flag = True
+    timer_run(timer)
     init_folder(config.backup_data_path)
     register_command(server)
     server.logger.info("Better Backup Loaded!")
+
+
+def show_timer_status(source: CommandSource):
+    source.reply(Timer.tr("status.config_enabled", config.enabled_timer))
+    source.reply(Timer.tr("status.clock_enabled", timer.is_enabled))
+    source.reply(Timer.tr("status.clock_interval", round(config.timer_interval, 2)))
+    if timer.is_enabled:
+        source.reply(timer.get_next_backup_message())
+
+
+def timer_set_enabled(source: CommandSource, value: bool):
+    config.enabled_timer = value
+    timer.set_enabled(value)
+    save_config()
+    source.reply(
+        Timer.tr(
+            "set_enabled.timer",
+            Timer.tr("set_enabled.start") if value else Timer.tr("set_enabled.stop"),
+        )
+    )
+    if value:
+        timer.broadcast_next_backup_time()
+
+
+def timer_set_interval(source: CommandSource, interval: float):
+    config.timer_interval = interval
+    save_config()
+    timer.set_interval(interval)
+    source.reply(Timer.tr("set_interval", interval))
+    timer.broadcast_next_backup_time()
+
+
+def reset_timer(source: CommandSource):
+    timer.reset_timer()
+    source.reply(Timer.tr("reset_timer"))
+    timer.broadcast_next_backup_time()
+
+
+@new_thread("BB - timer")
+def timer_run(timer: Timer):
+    global timer_run_flag
+    while True:  # loop until stop
+        while True:  # loop for backup interval
+            time.sleep(0.1)
+            if not timer_run_flag:
+                return
+            if time.time() - timer.time_since_backup > timer.get_backup_interval():
+                break
+        if timer.is_enabled and timer.server.is_server_startup():
+            timer.broadcast(timer.tr("run.trigger_time", timer.get_interval()))
+            timer.is_backup_triggered = False
+
+            do_create(
+                timer.server.get_plugin_command_source(),
+                str(timer.tr("run.timed_backup", "timer")),
+            )
+
+            if timer.is_backup_triggered:
+                timer.broadcast(timer.tr("on_backup_succeed"))
+            else:
+                timer.broadcast(timer.tr("on_backup_failed"))
+                timer.reset_timer()
+                timer.broadcast_next_backup_time()
+
+
+def trigger_abort(source: CommandSource):
+    global abort_restore, uuid_selected
+    abort_restore = True
+    uuid_selected = None
+    print_message(source, "Operation terminated!", reply_source=True)
 
 
 def register_command(server: PluginServerInterface):
@@ -137,14 +190,14 @@ def register_command(server: PluginServerInterface):
             .requires(lambda src: src.has_permission(lvl))
             .on_error(
                 RequirementNotMet,
-                lambda src: src.reply(tr("command.permission_denied")),
+                lambda src: print_message(src, tr("command.permission_denied"), reply_source=True),
                 handled=True,
             )
         )
 
     server.register_command(
         Literal(PREFIX)
-        .runs(print_help_message)
+        .runs(lambda src: print_help_message(src))
         .on_error(UnknownArgument, print_unknown_argument_message, handled=True)
         .then(
             get_literal_node("make")
@@ -179,13 +232,31 @@ def register_command(server: PluginServerInterface):
         .then(get_literal_node("reload").runs(load_config))
         .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
         .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
+        .then(
+            get_literal_node("timer")
+            .runs(lambda src: show_timer_status(src))
+            .then(Literal("enable").runs(lambda src: timer_set_enabled(src, True)))
+            .then(Literal("disable").runs(lambda src: timer_set_enabled(src, False)))
+            .then(
+                Literal("set_interval").then(
+                    Float("interval")
+                    .at_min(0.1)
+                    .runs(lambda src, ctx: timer_set_interval(src, ctx["interval"]))
+                )
+            )
+            .then(Literal("reset").runs(lambda src: reset_timer(src)))
+        )
     )
 
 
 @new_thread("BB - create")
-@single_op(tr("operations.create"))
 def create_backup(source: CommandSource, message: Optional[str]):
-    print_message(source, tr("create_backup.start"), tell=False)
+    do_create(source, message)
+
+
+@single_op(tr("operations.create"))
+def do_create(source: CommandSource, message: Optional[str]):
+    print_message(source, tr("create_backup.start"))
     start_time = time.time()
 
     # start backup
@@ -222,6 +293,8 @@ def create_backup(source: CommandSource, message: Optional[str]):
     if config.turn_off_auto_save:
         source.get_server().execute("save-on")
 
+    timer.on_backup_created(backup_uuid=backup_info["backup_uuid"])
+
 
 @new_thread("BB - remove")
 @single_op(tr("operations.remove"))
@@ -231,13 +304,13 @@ def remove_backup(source: CommandSource, uuid: Optional[str]):
             os.path.join(config.backup_data_path, METADATA_DIR)
         )
         if uuid is None:
-            print_message(source, tr("no_one_backup"))
+            print_message(source, tr("no_one_backup"), reply_source=True)
             return
     elif not check_backup_uuid_available(
         backup_uuid=uuid,
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
     ):
-        print_message(source, tr("unknown_slot", uuid))
+        print_message(source, tr("unknown_slot", uuid), reply_source=True)
 
     all_backup_info = get_all_backup_info(
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR)
@@ -249,7 +322,7 @@ def remove_backup(source: CommandSource, uuid: Optional[str]):
                 metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
                 cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
             )
-    print_message(source, tr("remove_backup.success", uuid), tell=False)
+    print_message(source, tr("remove_backup.success", uuid))
 
 
 def restore_backup(source: CommandSource, uuid: Optional[str]):
@@ -260,7 +333,7 @@ def restore_backup(source: CommandSource, uuid: Optional[str]):
             os.path.join(config.backup_data_path, METADATA_DIR)
         )
         if uuid is None:
-            print_message(source, tr("no_one_backup"))
+            print_message(source, tr("no_one_backup"), reply_source=True)
             return
         uuid_selected = uuid
     elif check_backup_uuid_available(
@@ -269,9 +342,9 @@ def restore_backup(source: CommandSource, uuid: Optional[str]):
     ):
         uuid_selected = uuid
     else:
-        print_message(source, tr("unknown_slot", uuid))
+        print_message(source, tr("unknown_slot", uuid), reply_source=True)
         return
-    print_message(source, tr("restore_backup.echo_action", uuid_selected), tell=False)
+    print_message(source, tr("restore_backup.echo_action", uuid_selected))
     text = RTextList(
         RText(tr("restore_backup.confirm_hint", PREFIX))
         .h(tr("restore_backup.confirm_hover"))
@@ -299,10 +372,10 @@ def confirm_restore(source: CommandSource):
     # !!bb confirm
     global uuid_selected
     if uuid_selected is None:
-        print_message(source, tr("confirm_restore.nothing_to_confirm"))
+        print_message(source, tr("confirm_restore.nothing_to_confirm"), reply_source=True)
         return
     # !!bb abord
-    print_message(source, tr("do_restore.countdown.intro"), tell=False)
+    print_message(source, tr("do_restore.countdown.intro"))
     for countdown in range(1, 10):
         print_message(
             source,
@@ -321,7 +394,7 @@ def confirm_restore(source: CommandSource):
             time.sleep(0.1)
             global abort_restore
             if abort_restore:
-                print_message(source, tr("do_restore.abort"), tell=False)
+                print_message(source, tr("do_restore.abort"))
                 return
     do_restore(source)
 
@@ -350,7 +423,7 @@ def do_restore(source: CommandSource):
         )
         source.get_server().start()
         print_message(
-            source, tr("restore_backup.success", backup_info["backup_uuid"]), tell=False
+            source, tr("restore_backup.success", backup_info["backup_uuid"])
         )
     except:
         server_inst.logger.exception(
@@ -414,7 +487,7 @@ def list_backups(source: CommandSource):
             ),
         ),
     )
-    print_message(source, header_text + text + total_space_text, prefix="")
+    print_message(source, header_text + text + total_space_text, prefix="", reply_source=True)
 
 
 @new_thread("BB - help")
@@ -430,10 +503,10 @@ def print_help_message(source: CommandSource):
                     RText(line).set_click_event(
                         RAction.suggest_command, prefix.group()
                     ),
-                    prefix="",
+                    prefix="", reply_source=True
                 )
             else:
-                print_message(source, line, prefix="")
+                print_message(source, line, prefix="", reply_source=True)
         print_message(
             source,
             tr("print_help.hotbar")
@@ -451,19 +524,19 @@ def print_help_message(source: CommandSource):
                 RAction.suggest_command,
                 tr("print_help.click_to_restore.command", PREFIX).to_plain_text(),
             ),
-            prefix="",
+            prefix="", reply_source=True
         )
 
 
 @new_thread("BB - reset")
 @single_op(tr("reset_backup.start", "§cReseting§r"))
 def reset_cache(source: CommandSource):
-    print_message(source, tr("reset_backup.start"), tell=False)
+    print_message(source, tr("reset_backup.start"))
     backup_data_path = os.path.join(config.backup_data_path)
     rmtree(backup_data_path)
     os.makedirs(backup_data_path)
     init_folder(data_dir=backup_data_path)
-    print_message(source, tr("reset_backup.success"), tell=False)
+    print_message(source, tr("reset_backup.success"))
 
 
 def on_info(server: PluginServerInterface, info: Info):
@@ -477,5 +550,11 @@ def on_info(server: PluginServerInterface, info: Info):
 
 
 def on_unload(server):
-    global abort_restore
+    global abort_restore, timer_run_flag
     abort_restore = True
+    timer_run_flag = False
+
+def on_remove(server):
+    global abort_restore, timer_run_flag
+    abort_restore = True
+    timer_run_flag = False
