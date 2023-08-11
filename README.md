@@ -5,7 +5,7 @@ Less disk usage, never duplicate files
 
 A plugin that supports efficient backup/rollback with file deduplication
 
-一个支持文件去重的高效备份/回档插件
+一个支持文件去重的高效备份/回档 MCDR 插件
 
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
 
@@ -134,3 +134,5 @@ mcd_root/
 - `reload`: 重新加载操作所需的最低权限级别。
 - `list`: 列出操作所需的最低权限级别。
 - `reset`: 重置操作所需的最低权限级别。
+
+Based on [QuickBackupM](https://github.com/TISUnion/QuickBackupM)
