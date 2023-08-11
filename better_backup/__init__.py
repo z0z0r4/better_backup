@@ -238,12 +238,13 @@ def do_create(source: CommandSource, message: Optional[str]):
         source.get_server().execute("save-on")
 
     timer.on_backup_created(backup_uuid=backup_info["backup_uuid"])
-    removed_uuids = auto_remove_util(
-        metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
-        cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
-        limit=config.backup_count_limit,
-    )
-    print_message(source, tr("auto_remove", " §l*§r ".join(removed_uuids)))
+    if config.auto_remove:
+        removed_uuids = auto_remove_util(
+            metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
+            cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
+            limit=config.backup_count_limit,
+        )
+        print_message(source, tr("auto_remove", " §l*§r ".join(removed_uuids)))
 
 
 @new_thread("BB - remove")

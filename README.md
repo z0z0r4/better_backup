@@ -151,6 +151,12 @@ mcd_root/
 
 指定自动删除备份点的保留数量
 
+## `auto_remove`
+
+默认值: `True`
+
+是否启用自动删除备份点
+
 ## `minimum_permission_level`
 
 默认值:
