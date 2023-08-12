@@ -4,7 +4,7 @@ import time
 import json
 import re
 from mcdreforged.api.all import *
-from better_backup.config import Configuration
+from better_backup.config import config
 from typing import Optional, Any, Callable
 from threading import Lock
 import functools
@@ -79,16 +79,6 @@ def single_op(name: RTextBase):
         return wrap
 
     return wrapper
-
-
-def load_config():
-    global config
-    config = server_inst.load_config_simple(
-        CONFIG_FILE,
-        target_class=Configuration,
-        in_data_folder=False,
-        source_to_reply=None,
-    )
 
 
 def save_config():
@@ -599,7 +589,7 @@ def register_command(server: PluginServerInterface):
         )
         .then(get_literal_node("confirm").runs(confirm_restore))
         .then(get_literal_node("abort").runs(trigger_abort))
-        .then(get_literal_node("reload").runs(load_config))
+        .then(get_literal_node("reload").runs(lambda src: src.get_server().reload_plugin('better_backup')))
         .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
         .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
         .then(
@@ -643,7 +633,6 @@ def register_command(server: PluginServerInterface):
 def on_load(server: PluginServerInterface, old):
     global operation_lock, server_inst, HelpMessage, timer, timer_run_flag
     server_inst = server
-    load_config()
     if hasattr(old, "operation_lock") and type(old.operation_lock) == type(
         operation_lock
     ):

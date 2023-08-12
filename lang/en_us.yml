@@ -48,6 +48,7 @@ better_backup:
     abort.no_slot: Available backup not found, §aback up§r aborted!
     success: Backup §e{0}§r successfully, time elapsed §6{1}§rs {2}
     fail: §aBack up§r unsuccessfully, error code {0}
+    zstd_not_found: 'Install pyzstd or disable compression plz: {0} -m pip install pyzstd'
 
   restore_backup:
     echo_action: Gonna restore the world to backup §6{0}§r
@@ -56,6 +57,8 @@ better_backup:
     abort_hint: §7{0} abort§r to abort
     abort_hover: Click to abort
     success: §cRestore§r successfully
+    fail: §cRestore§r unsuccessfully, error code {0}
+    zstd_not_found: 'Install pyzstd to restore compressed backup: {0} -m pip install pyzstd'
 
   reset_backup:
     start: Gonna reset the backup data

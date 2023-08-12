@@ -5,15 +5,26 @@ import time
 import json
 import uuid
 import tarfile
+import importlib
+import sys
 from mcdreforged.api.all import *
-from better_backup.config import Configuration
-from typing import Optional, NamedTuple
+from better_backup.config import config, Configuration
+from typing import Optional
 from enum import Enum
+
+
+pyzstd = None
+try:
+    pyzstd = importlib.import_module('pyzstd')
+except ModuleNotFoundError as e:
+    pass
 
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
 TEMP_DIR = "overwrite"
+ZST_EXT = '.zst'
+
 
 class ExportFormat(Enum):
     plain = ('', False)
@@ -111,7 +122,7 @@ def walk_and_cache_files(
     return result, total_size
 
 
-def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
+def get_file_md5_by_file_obj(obj, range_size: int = 131072) -> str:
     """通过文件对象获取文件的md5值"""
     md5 = hashlib.md5()
     while True:
@@ -124,19 +135,26 @@ def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
 
 def get_file_md5_and_cache(src_file: str, cache_folder: str):
     """获取文件的md5值，并将文件复制到缓存文件夹中"""
-    if not os.path.exists(os.path.split(src_file)[0]):
-        os.makedirs(os.path.split(src_file)[0])
-    with open(src_file, "rb") as f:
-        md5 = get_file_md5_by_file_obj(f)
+    os.makedirs(os.path.split(src_file)[0], exist_ok=True)
+    with open(src_file, "rb") as fsrc:
+        md5 = get_file_md5_by_file_obj(fsrc)
         dst_file = os.path.join(cache_folder, md5[:2], md5[2:])
-        f.seek(0, 0)
-        if not os.path.exists(dst_file):
-            with open(dst_file, "wb") as f2:
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    f2.write(data)
+        zst_dst_file = dst_file + ZST_EXT
+        fsrc.seek(0, 0)
+        if not (os.path.exists(dst_file) or os.path.exists(zst_dst_file)):
+            print(config)
+            if config.backup_compress_level:
+                if pyzstd is None: # just raise
+                        raise ModuleNotFoundError(str(tr('create_backup.zstd_not_found', sys.executable)))
+                with open(zst_dst_file, "wb") as fdst:
+                    pyzstd.compress_stream(fsrc, fdst, level_or_option=config.backup_compress_level)
+            else:
+                with open(dst_file, "wb") as fdst:
+                    while True:
+                        data = fsrc.read(131072)
+                        if not data:
+                            break
+                        fdst.write(data)
     return md5
 
 
@@ -355,14 +373,29 @@ def restore_backup_util(
                     cache_dir=cache_dir,
                 )
             elif backup_info[info]["type"] == "file":
-                copyfile(
-                    os.path.join(
+                src = os.path.join(
                         cache_dir,
                         backup_info[info]["md5"][:2],
                         backup_info[info]["md5"][2:],
-                    ),
-                    os.path.join(dst_dir, info),
-                )
+                    )
+                zst_src = src + ZST_EXT # md5.zst
+                dst = os.path.join(dst_dir, info)
+
+                if os.path.exists(src):
+                    copyfile(
+                        os.path.join(
+                            cache_dir,
+                            backup_info[info]["md5"][:2],
+                            backup_info[info]["md5"][2:],
+                        ),
+                        dst,
+                    )
+                elif os.path.exists(zst_src):  # Try zst if file not found
+                    if pyzstd is None:
+                        raise ModuleNotFoundError(str(tr('restore_backup.zstd_not_found', sys.executable)))
+                    with open(zst_src, 'rb') as fsrc:
+                        with open(dst, 'wb') as fdst:
+                            pyzstd.decompress_stream(fsrc, fdst)
 
     restore(
         dst_dir=dst_dir,
