@@ -30,6 +30,9 @@ better_backup:
   unknown_backup: uuid 输入错误
   empty_backup: uuid 输入错误，备份点§6{0}§r不存在
   no_one_backup: 未找到可用备份点
+  xxhash_enabled: xxHash v{0} 已启用, 使用 xxh3 算法
+  xxhash_not_found: 找不到 xxHash! 尝试安装 xxHash, 请等待
+  install_xxhash_failed: 安装 xxHash 失败, 使用 md5 算法. 运行 'pip install xxhash' 以获取更高的性能
 
   lock.warning: 正在{0}中，请等待操作执行完成
   operations:

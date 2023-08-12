@@ -29,6 +29,10 @@ better_backup:
   empty_comment: §7empty§r
   unknown_backup: Not found {0} backup
   no_one_backup: No one backup can be found
+  xxhash_enabled: xxHash v{0} has been enabled, use xxh3
+  xxhash_not_found: xxHash not found! Trying to install xxHash, please wait
+  install_xxhash_failed: Failed to install xxHash, use md5. Run 'pip install xxhash' for better performance
+
 
   lock.warning: Executing "{0}", please don't spam
   operations:

@@ -649,7 +649,7 @@ def on_load(server: PluginServerInterface, old):
     ):
         operation_lock = old.operation_lock
     server.register_help_message(PREFIX, "Show the usage of Better Backup")
-
+    check_xxhash(server)
     meta = server.get_self_metadata()
     HelpMessage = tr("help_message", PREFIX, meta.name, meta.version)
     timer = Timer(server=server_inst)

@@ -10,6 +10,8 @@ from better_backup.config import Configuration
 from typing import Optional, NamedTuple
 from enum import Enum
 
+XXHASH_STATUS = True
+
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
@@ -34,6 +36,32 @@ class ExportFormat(Enum):
         
     def get_file_name(self, base_name: str) -> str:
         return base_name + self.suffix
+
+@new_thread("BB - xxHash")
+def check_xxhash(server: PluginServerInterface):
+    global XXHASH_STATUS, xxhash
+    XXHASH_STATUS = True
+    import xxhash
+    server.logger.info(tr("xxhash_enabled", xxhash.VERSION))
+    # try:
+    #     import xxhash
+    #     XXHASH_STATUS = True
+    #     server.logger.info(tr("xxhash_enabled", xxhash.VERSION))
+    #     return XXHASH_STATUS
+    # except:
+    #     XXHASH_STATUS = False
+    #     if not XXHASH_STATUS:
+    #         server.logger.warning(tr("xxhash_not_found"))
+    #         import sys, subprocess
+    #         subprocess.run(f'{sys.executable} -m pip install xxhash', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    #         try:
+    #             import xxhash
+    #             XXHASH_STATUS = True
+    #             server.logger.info(tr("xxhash_enabled", xxhash.VERSION))
+    #             return XXHASH_STATUS
+    #         except:
+    #             server.logger.warning(tr("install_xxhash_failed"))
+    #     return XXHASH_STATUS
 
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(
@@ -90,10 +118,11 @@ def walk_and_cache_files(
                 f_stat = os.stat(full_path)
                 result[name] = {
                     "type": "file",
-                    "md5": get_file_md5_and_cache(full_path, cache_folder),
+                    # "md5": get_file_hash_and_cache(full_path, cache_folder),
                     "mtime": f_stat.st_mtime,
                     "size": f_stat.st_size,
                 }
+                result[name].update(get_file_hash_and_cache(full_path, cache_folder)) # support xxh3
                 total_size += f_stat.st_size
             else:
                 walk_files_info, _total_size = walk_and_cache_files(
@@ -112,7 +141,9 @@ def walk_and_cache_files(
 
 
 def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
-    """通过文件对象获取文件的md5值"""
+    """
+    通过文件对象获取文件的md5值
+    """
     md5 = hashlib.md5()
     while True:
         data = obj.read(range_size)
@@ -121,14 +152,33 @@ def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
         md5.update(data)
     return md5.hexdigest()
 
+def get_file_xxh3_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
+    """
+    通过文件对象获取文件的xxh3值
+    """
+    xxh3_128 = xxhash.xxh3_128()
+    while True:
+        data = obj.read(range_size)
+        if not data:
+            break
+    xxh3_128.update(data)
+    return xxh3_128.hexdigest()
 
-def get_file_md5_and_cache(src_file: str, cache_folder: str):
-    """获取文件的md5值，并将文件复制到缓存文件夹中"""
+def get_file_hash_and_cache(src_file: str, cache_folder: str) -> dict:
+    """
+    获取文件的 hash 值，并将文件复制到缓存文件夹中
+    """
     if not os.path.exists(os.path.split(src_file)[0]):
         os.makedirs(os.path.split(src_file)[0])
+    file_info = {}
     with open(src_file, "rb") as f:
-        md5 = get_file_md5_by_file_obj(f)
-        dst_file = os.path.join(cache_folder, md5[:2], md5[2:])
+        if XXHASH_STATUS:
+            hash = get_file_xxh3_by_file_obj(f)
+            file_info["xxh3"] = hash
+        else:
+            hash = get_file_md5_by_file_obj(f)
+            file_info["md5"] = hash
+        dst_file = os.path.join(cache_folder, hash[:2], hash[2:])
         f.seek(0, 0)
         if not os.path.exists(dst_file):
             with open(dst_file, "wb") as f2:
@@ -137,7 +187,7 @@ def get_file_md5_and_cache(src_file: str, cache_folder: str):
                     if not data:
                         break
                     f2.write(data)
-    return md5
+    return file_info # {"xxh3": hash} or {"md5": hash}
 
 
 def get_dir_size(dir_path: str) -> int:
@@ -261,22 +311,25 @@ def check_backup_uuid_available(backup_uuid: str, metadata_dir: str) -> bool:
         return False
 
 
-def scan_backup_info_get_md5_set(backup_info: dict):
-    md5_set = set()
+def scan_backup_info_get_hash_set(backup_info: dict):
+    hash_set = set()
     for info in backup_info:
         if backup_info[info]["type"] == "file":
-            hash = backup_info[info]["md5"]
-            md5_set.add(hash)
+            if "md5" in backup_info[info]:
+                hash = backup_info[info]["md5"]
+            elif "xxh3" in backup_info[info]:
+                hash = backup_info[info]["xxh3"]
+            hash_set.add(hash)
         elif backup_info[info]["type"] == "dir":
-            kid_md5_set = scan_backup_info_get_md5_set(backup_info[info]["files"])
-            md5_set = md5_set.union(kid_md5_set)
-    return md5_set
+            kid_md5_set = scan_backup_info_get_hash_set(backup_info[info]["files"])
+            hash_set = hash_set.union(kid_md5_set)
+    return hash_set
 
 
 def add_cache_index_count(metadata_dir: str, backup_info: dict):
     with open(os.path.join(metadata_dir, f"cache_index.json"), encoding="UTF-8") as f:
         cache_info = json.load(f)
-        md5_set = scan_backup_info_get_md5_set(backup_info["backup_files"])
+        md5_set = scan_backup_info_get_hash_set(backup_info["backup_files"])
         for md5 in md5_set:
             if md5 in cache_info:
                 cache_info[md5] += 1
@@ -291,7 +344,7 @@ def add_cache_index_count(metadata_dir: str, backup_info: dict):
 def subtract_cache_index_count(metadata_dir: str, cache_dir: str, backup_info: dict):
     with open(os.path.join(metadata_dir, f"cache_index.json"), encoding="UTF-8") as f:
         cache_info = json.load(f)
-        md5_set = scan_backup_info_get_md5_set(backup_info["backup_files"])
+        md5_set = scan_backup_info_get_hash_set(backup_info["backup_files"])
         for md5 in md5_set:
             cache_info[md5] -= 1
             if cache_info[md5] == 0:

@@ -1,4 +1,7 @@
 # Better_Backup
+
+> 此分支启用 xxHash 试图提升性能，但 xxHash 救不了 Python，弃算法投多进程 :( 有矢
+
 Less disk usage, never duplicate files
 
 更少的磁盘占用，永远不会有重复文件。
