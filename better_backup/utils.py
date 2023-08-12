@@ -102,8 +102,8 @@ def walk_and_cache_files(
                 result[name] = {
                     "type": "file",
                     "md5": get_file_md5_and_cache(full_path, cache_folder),
-                    "mtime": f_stat.st_mtime,
-                    "size": f_stat.st_size,
+                    # "mtime": f_stat.st_mtime,
+                    # "size": f_stat.st_size,
                 }
                 total_size += f_stat.st_size
             else:
@@ -343,7 +343,7 @@ def make_backup_util(
         )
         total_files_info[src_dir] = {
             "type": "dir",
-            "size": files_size,
+            # "size": files_size,
             "files": walk_files_info,
         }
         total_size += files_size
