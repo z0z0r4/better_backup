@@ -400,7 +400,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
             if _i <= (len(all_backup_info) - 1):
                 backup_info = all_backup_info[_i]
                 text += RTextList(
-                    RText(f'[§e{_i+1}§r] [§e{backup_info["backup_uuid"]}§r] '),
+                    RText(f'[§e{str((_i+1)).zfill(len(LIST_PAGE_SIZE))}§r] [§e{backup_info["backup_uuid"]}§r] '),
                     RText("[▷] ", color=RColor.green)
                     .h(tr("list_backup.restore_hint", backup_info["backup_uuid"]))
                     .c(
