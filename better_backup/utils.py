@@ -4,15 +4,36 @@ import hashlib
 import time
 import json
 import uuid
+import tarfile
 from mcdreforged.api.all import *
 from better_backup.config import Configuration
-from typing import Optional
+from typing import Optional, NamedTuple
+from enum import Enum
 
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
 TEMP_DIR = "overwrite"
 
+class ExportFormat(Enum):
+    plain = ('', False)
+    tar = ('.tar', False)
+    tar_gz = ('.tar.gz', True)
+    tar_xz = ('.tar.xz', False)
+
+    def __init__(self, suffix, supports_compress_level):
+        self.suffix = suffix
+        self.supports_compress_level = supports_compress_level
+
+    @classmethod
+    def of(cls, mode: str) -> 'ExportFormat':
+        try:
+            return cls[mode]
+        except KeyError:
+            return cls.plain
+        
+    def get_file_name(self, base_name: str) -> str:
+        return base_name + self.suffix
 
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(
@@ -370,12 +391,61 @@ def auto_remove_util(metadata_dir: str, cache_dir: str, limit: int) -> list:
             removed_uuids.append(backup_info["backup_uuid"])
     return removed_uuids
 
-def export_backup_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str):
-    if not os.path.exists(dst_dir):
-        os.makedirs(dst_dir)
-    rmtree(dst_dir)
-    backup_info = get_backup_info(backup_uuid, metadata_dir=metadata_dir)
-    restore_backup_util(backup_uuid=backup_info["backup_uuid"],
-                        metadata_dir=metadata_dir,
-                        cache_dir=cache_dir,
-                        dst_dir=dst_dir)
+def export_backup_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str, export_format: ExportFormat, compress_level: int = 1):
+    if export_format == ExportFormat.plain:
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+        rmtree(dst_dir)
+        backup_info = get_backup_info(backup_uuid, metadata_dir=metadata_dir)
+        restore_backup_util(backup_uuid=backup_info["backup_uuid"],
+                            metadata_dir=metadata_dir,
+                            cache_dir=cache_dir,
+                            dst_dir=dst_dir)
+        output_path = dst_dir
+    else:
+        output_path = export_backup_tar_util(backup_uuid, metadata_dir, cache_dir, dst_dir, export_format, compress_level)
+    return output_path
+
+
+def get_export_file_name(backup_format: ExportFormat, backup_uuid: str):
+    if backup_format == ExportFormat.plain:
+        raise ValueError('plain mode is not supported')
+    return backup_format.get_file_name(backup_uuid)
+
+def export_backup_tar_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str, export_format: ExportFormat = ExportFormat.tar, compress_level: int = 1) -> str:
+    backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
+
+    def add_files_into_tar(tar_file_obj: tarfile.TarFile, parent_dir: str ,cache_dir: str, backup_info: dict):
+        for info in backup_info:
+            if backup_info[info]["type"] == "dir":
+                tar_file_obj = add_files_into_tar(
+                    tar_file_obj=tar_file_obj,
+                    parent_dir=os.path.join(parent_dir, info),
+                    backup_info=backup_info[info]["files"],
+                    cache_dir=cache_dir,
+                )
+            elif backup_info[info]["type"] == "file":
+                tar_file_obj.add(name=os.path.join(
+                        cache_dir,
+                        backup_info[info]["md5"][:2],
+                        backup_info[info]["md5"][2:],
+                    ),
+                    arcname=os.path.join(parent_dir, info)
+                )
+        return tar_file_obj
+
+    if export_format == ExportFormat.tar_gz:
+        tar_mode = 'w:gz'
+    elif export_format == ExportFormat.tar_xz:
+        tar_mode = 'w:xz'
+    elif tar_mode == ExportFormat.tar:
+        tar_mode = 'w'
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir, exist_ok=True)
+    tar_path = os.path.join(dst_dir, get_export_file_name(export_format, backup_uuid))
+    kwargs = {}
+    if export_format.supports_compress_level and 1 <= compress_level <= 9:
+        kwargs['compresslevel'] = compress_level
+    with tarfile.open(tar_path, tar_mode, **kwargs) as backup_tar_obj:
+        add_files_into_tar(tar_file_obj=backup_tar_obj, cache_dir=cache_dir, backup_info=backup_info["backup_files"], parent_dir=backup_info["backup_uuid"])
+    return tar_path

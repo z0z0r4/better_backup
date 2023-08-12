@@ -16,7 +16,10 @@ class Configuration(Serializable):
     backup_data_path: str = "./better_backup"
     server_path: str = "./server"
     overwrite_backup_folder: str = "overwrite"
-    export_backup_folder: str = "export_backup"
+    export_backup_folder: str = "./export_backup"
+    # plain / tar / tar_gz / tar_xz
+    export_backup_format: str = "tar_gz"
+    export_backup_compress_level: int = 1
     auto_remove: bool = True
     backup_count_limit: int = 20
     # 0:guest 1:user 2:helper 3:admin 4:owner

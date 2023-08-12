@@ -12,7 +12,7 @@ better_backup:
     §7{0} list [<page>]§r Display backup information to choise backups
     §7{0} reload§r Reload config file
     §7{0} reset§r Reset backup data
-    §7{0} export §6[<uuid|index>]§r Export backup data
+    §7{0} export §6[<uuid|index>]§r §6[<format>]§r §6[<compress_level>]§r Export backup data
     Latest backup point when §6<uuid|index>§r is not set or §c1§r
     For example, §c2§r is the second backup point by the order of creation date
     But here §cindex§r does not consider §cpage§r, please calculate it yourself
@@ -65,7 +65,9 @@ better_backup:
     start: Exporting the backup data
     success: §aExport§r successfully, at {0}
 
-  auto_remove: Deleted backup §e{0}§r
+  auto_remove:
+    reomved: Auto Deleted backup §e{0}§r
+    no_one_removed: No one backup was auto deleted
 
   confirm_restore.nothing_to_confirm: Nothing to confirm
 

@@ -172,7 +172,7 @@ def trigger_abort(source: CommandSource):
     print_message(source, "Operation terminated!", reply_source=True)
 
 
-def process_uuid(source: CommandSource, keyword: str):
+def process_uuid(source: CommandSource, keyword: str = None):
     if keyword is None:
         keyword = get_latest_backup_uuid(
             os.path.join(config.backup_data_path, METADATA_DIR)
@@ -195,12 +195,12 @@ def process_uuid(source: CommandSource, keyword: str):
 
 
 @new_thread("BB - create")
-def create_backup(source: CommandSource, message: Optional[str]):
+def create_backup(source: CommandSource, message: Optional[str] = None):
     do_create(source, message)
 
 
 @single_op(tr("operations.create"))
-def do_create(source: CommandSource, message: Optional[str]):
+def do_create(source: CommandSource, message: Optional[str] = None):
     print_message(source, tr("create_backup.start"))
     start_time = time.time()
 
@@ -244,12 +244,17 @@ def do_create(source: CommandSource, message: Optional[str]):
             cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
             limit=config.backup_count_limit,
         )
-        print_message(source, tr("auto_remove", " §l*§r ".join(removed_uuids)))
+        if len(removed_uuids) == 0:
+            print_message(source, tr("auto_remove.no_one_removed"))
+        else:
+            print_message(
+                source, tr("auto_remove.removed", " §l*§r ".join(removed_uuids))
+            )
 
 
 @new_thread("BB - remove")
 @single_op(tr("operations.remove"))
-def remove_backup(source: CommandSource, uuid: Optional[str]):
+def remove_backup(source: CommandSource, uuid: Optional[str] = None, index: Optional[int] = None):
     uuid_result = process_uuid(source, uuid)
     if uuid_result is None:
         return
@@ -260,14 +265,14 @@ def remove_backup(source: CommandSource, uuid: Optional[str]):
     for backup_info in all_backup_info:
         if uuid_result == backup_info["backup_uuid"]:
             remove_backup_util(
-                backup_uuid=uuid,
+                backup_uuid=uuid_result,
                 metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
                 cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
             )
     print_message(source, tr("remove_backup.success", uuid_result))
 
 
-def restore_backup(source: CommandSource, uuid: Optional[str]):
+def restore_backup(source: CommandSource, uuid: Optional[str] = None):
     global uuid_selected, abort_restore
     abort_restore = False
     uuid_selected = process_uuid(source, uuid)
@@ -400,7 +405,9 @@ def list_backups(source: CommandSource, page_num: int = 1):
             if _i <= (len(all_backup_info) - 1):
                 backup_info = all_backup_info[_i]
                 text += RTextList(
-                    RText(f'[§e{str((_i+1)).zfill(len(LIST_PAGE_SIZE))}§r] [§e{backup_info["backup_uuid"]}§r] '),
+                    RText(
+                        f'[§e{str((_i+1)).zfill(len(str(LIST_PAGE_SIZE)))}§r] [§e{backup_info["backup_uuid"]}§r] '
+                    ),
                     RText("[▷] ", color=RColor.green)
                     .h(tr("list_backup.restore_hint", backup_info["backup_uuid"]))
                     .c(
@@ -446,7 +453,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
         )
         text += page_info
         text += RText(tr("list_backup.page.total_info", len(all_backup_info)))
-        text += " "
+        text += " §l*§r "
 
     total_space_text = RText(
         tr(
@@ -514,24 +521,34 @@ def reset_cache(source: CommandSource):
 
 @new_thread("BB - export")
 @single_op(tr("operations.export"))
-def export_backup(source: CommandSource, uuid: str):
+def export_backup(
+    source: CommandSource,
+    uuid: Optional[str] = None,
+    format: Optional[str] = None,
+    compress_level: Optional[int] = None,
+):
     uuid_result = process_uuid(source, uuid)
     if uuid_result is None:
         return
     print_message(source, tr("export_backup.start"), reply_source=True)
-    export_backup_util(
+    
+    output_path = export_backup_util(
         uuid_result,
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
         cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
         dst_dir=os.path.join(config.backup_data_path, config.export_backup_folder),
+        export_format=ExportFormat.of(format)
+        if format is not None
+        else ExportFormat.of(config.export_backup_format),
+        compress_level=compress_level
+        if compress_level is not None
+        else config.export_backup_compress_level,
     )
     print_message(
         source,
         tr(
             "export_backup.success",
-            os.path.abspath(
-                os.path.join(config.backup_data_path, config.export_backup_folder)
-            ),
+            os.path.abspath(output_path),
         ),
         reply_source=True,
     )
@@ -558,7 +575,7 @@ def register_command(server: PluginServerInterface):
         .on_error(UnknownArgument, print_unknown_argument_message, handled=True)
         .then(
             get_literal_node("make")
-            .runs(lambda src: create_backup(src, None))
+            .runs(lambda src: create_backup(src))
             .then(
                 GreedyText("message").runs(
                     lambda src, ctx: create_backup(src, ctx["message"])
@@ -567,26 +584,18 @@ def register_command(server: PluginServerInterface):
         )
         .then(
             get_literal_node("restore")
-            .runs(lambda src: restore_backup(src, None))
-            .then(
-                GreedyText("uuid").runs(
-                    lambda src, ctx: restore_backup(src, ctx["uuid"])
-                )
-            )
+            .runs(lambda src: restore_backup(src))
+            .then(Text("uuid").runs(lambda src, ctx: restore_backup(src, ctx["uuid"])))
         )
         .then(
             get_literal_node("remove")
-            .runs(lambda src: remove_backup(src, None))
-            .then(
-                GreedyText("uuid").runs(
-                    lambda src, ctx: remove_backup(src, ctx["uuid"])
-                )
-            )
+            .runs(lambda src: remove_backup(src))
+            .then(Text("uuid").runs(lambda src, ctx: remove_backup(src, ctx["uuid"])))
         )
         .then(
             get_literal_node("list")
             .runs(lambda src: list_backups(src))
-            .then(Integer("page").runs(lambda src, ctx: list_backups(src, ctx["page"])))
+            .then(Integer("page").at_min(1).runs(lambda src, ctx: list_backups(src, ctx["page"])))
         )
         .then(get_literal_node("confirm").runs(confirm_restore))
         .then(get_literal_node("abort").runs(trigger_abort))
@@ -595,14 +604,25 @@ def register_command(server: PluginServerInterface):
         .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
         .then(
             get_literal_node("export")
-            .runs(lambda src: export_backup(src, None))
+            .runs(lambda src: export_backup(src))
             .then(
-                GreedyText("uuid").runs(
-                    lambda src, ctx: export_backup(src, ctx["uuid"])
+                Text("uuid")
+                .runs(lambda src, ctx: export_backup(src, ctx["uuid"]))
+                .then(
+                    Enumeration("format", ExportFormat)
+                    .runs(
+                        lambda src, ctx: export_backup(src, ctx["uuid"], ctx["format"])
+                    )
+                    .then(
+                        Integer("compress_level").at_min(1).at_max(9).runs(
+                            lambda src, ctx: export_backup(
+                                src, ctx["uuid"], ctx["format"], ctx["compress_level"]
+                            )
+                        )
+                    )
                 )
             )
         )
-        .then(get_literal_node("export").runs(lambda src: export_backup(src)))
         .then(
             get_literal_node("timer")
             .runs(lambda src: show_timer_status(src))
