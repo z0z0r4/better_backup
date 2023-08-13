@@ -160,7 +160,8 @@ cython_debug/
 #.idea/
 
 # MCDR things
-better_backup/
+better_backup/cache
+better_backup/metadata
 config/
 server/
 logs/
