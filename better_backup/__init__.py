@@ -440,7 +440,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
                 RAction.run_command,
                 f"{PREFIX} list {page_num-1}",
             ),
-            RText(f" {page_num}/{int(len(all_backup_info) / LIST_PAGE_SIZE) + 1} "),
+            RText(f" {page_num}/{int(len(all_backup_info) / LIST_PAGE_SIZE) if divmod(len(all_backup_info), LIST_PAGE_SIZE)[1] == 0 else int(len(all_backup_info) / LIST_PAGE_SIZE) + 1} "),
             RText("[>>] ", color=RColor.green)
             .h(tr("list_backup.previous_page.hits"))
             .c(
