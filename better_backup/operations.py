@@ -103,7 +103,7 @@ def do_create(source: CommandSource, message: Optional[str] = None):
             ),
         )
 
-        # 自动删除
+        # remove oldest backup if reached max count
         timer.on_backup_created(backup_uuid=backup_info["backup_uuid"])
         if config.auto_remove:
             removed_uuids = auto_remove_util(
@@ -123,7 +123,7 @@ def do_create(source: CommandSource, message: Optional[str] = None):
     except ModuleNotFoundError as e:
         print_message(source, tr("create_backup.fail", e))
     finally:
-        if config.turn_off_auto_save:  # 务必记得重新开始自动保存
+        if config.turn_off_auto_save:  #! reopen autosave
             source.get_server().execute(config.save_command["save-on"])
 
 
@@ -277,7 +277,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
     elif (
         LIST_PAGE_SIZE *
             (page_num - 1) >= len(all_backup_info) or page_num <= 0
-    ):  # 不存在这一页
+    ):  # page not exist
         print_message(source, tr(
             "list_backup.page.page_not_found"), reply_source=True)
         return

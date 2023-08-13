@@ -20,17 +20,18 @@ class Configuration(Serializable):
     ignored_extensions: List[str] = [".lock"]
 
     world_names: List[str] = ["world"]
-    # 自定义保存命令
+
     save_command: Dict[str, str] = {
         "save-off": "save-off",
         "save-all flush": "save-all flush",
         "save-on": "save-on",
     }
-    # 自定义保存输出
-    saved_output: List[str] = [
+
+    saved_output: List[str] = [ # to detect game save
         "Saved the game",  # 1.13+
         "Saved the world",  # 1.12-
     ]
+
     backup_data_path: str = "./better_backup"
     server_path: str = "./server"
     overwrite_backup_folder: str = "overwrite"

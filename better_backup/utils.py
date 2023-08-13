@@ -441,9 +441,8 @@ def restore_backup_util(
                 )
                 zst_src = src + ZST_EXT  # md5.zst
                 dst = os.path.join(dst_dir, info)
-                # Try .zst first
-                # 既然 config 默认开启那就应该先用 .zst
-                if os.path.exists(zst_src):
+                
+                if os.path.exists(zst_src): # Try .zst first
                     if pyzstd is None:
                         raise ModuleNotFoundError(
                             str(tr("restore_backup.zstd_not_found", sys.executable))

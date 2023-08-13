@@ -99,7 +99,7 @@ mcd_root/
     "backup_data_path": "./better_backup", // 备份路径
     "server_path": "./server", // 服务端位置
     "overwrite_backup_folder": "overwrite", // 覆盖备份文件夹名称
-    "backup_compress_level": 3, // 备份压缩等级 (1~22)，为 0 时禁用
+    "backup_compress_level": 3, // 备份 zst 压缩等级 (1~22)，为 0 时禁用
     "export_backup_folder": "./export_backup", // 备份导出路径
     "export_backup_format": "tar_gz", // 备份导出格式 (plain, tar, tar_gz, tar_xz)
     "export_backup_compress_level": 1, // 备份压缩等级
@@ -134,6 +134,7 @@ mcd_root/
 - [ ] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
+- [ ] 导出方式改为 plain, tar, tar.zst
 - [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
 
 ## Wontdo
