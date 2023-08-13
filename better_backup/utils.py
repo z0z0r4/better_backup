@@ -1,23 +1,29 @@
-from shutil import copytree, copyfile, rmtree
-import os
+import functools
 import hashlib
-import time
-import json
-import uuid
-import tarfile
 import importlib
+import json
+import os
 import sys
-from mcdreforged.api.all import *
-from better_backup.config import config, Configuration
-from typing import Optional
+import tarfile
+import time
+import uuid
 from enum import Enum
+from shutil import copyfile, copytree, rmtree
+from threading import Lock
+from typing import Any, Callable, Optional
 
+from mcdreforged.api.all import *
+
+from better_backup.config import Configuration, config
 
 pyzstd = None
 try:
     pyzstd = importlib.import_module("pyzstd")
 except ModuleNotFoundError as e:
     pass
+
+operation_lock = Lock()
+operation_name = RText("?")
 
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
@@ -53,6 +59,16 @@ def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     )
 
 
+def thread_name(operation):
+    return f"PLUGIN_ID:{operation}"
+
+
+def command_run(message: Any, text: Any, command: str) -> RTextBase:
+    fancy_text = message.copy() if isinstance(
+        message, RTextBase) else RText(message)
+    return fancy_text.set_hover_text(text).set_click_event(RAction.run_command, command)
+
+
 def print_message(
     source: CommandSource,
     msg,
@@ -70,6 +86,32 @@ def print_message(
         source.get_server().logger.info(msg)
     else:
         source.get_server().broadcast(msg)
+
+
+def single_op(name: RTextBase):
+    """ensure operation lock"""
+    def wrapper(func: Callable):
+        @functools.wraps(func)
+        def wrap(source: CommandSource, *args, **kwargs):
+            global operation_name
+            acq = operation_lock.acquire(blocking=False)
+            if acq:
+                operation_name = name
+                try:
+                    func(source, *args, **kwargs)
+                finally:
+                    try:
+                        operation_lock.release()
+                    except:
+                        pass
+            else:
+                print_message(
+                    source, tr("lock.warning", operation_name), reply_source=True
+                )
+
+        return wrap
+
+    return wrapper
 
 
 def format_dir_size(size: int) -> str:
@@ -165,7 +207,8 @@ def get_file_md5_and_cache(src_file: str, cache_folder: str):
 def get_dir_size(dir_path: str) -> int:
     size = 0
     for root, dirs, files in os.walk(dir_path):
-        size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
+        size += sum([os.path.getsize(os.path.join(root, name))
+                    for name in files])
     return size
 
 
@@ -225,7 +268,8 @@ def get_backup_info(backup_uuid: str, metadata_dir: str) -> dict:
 
 def save_backup_info(backup_info: str, metadata_dir: str):
     with open(
-        os.path.join(metadata_dir, f"backup_{backup_info['backup_uuid']}_info.json"),
+        os.path.join(
+            metadata_dir, f'backup_{backup_info["backup_uuid"]}_info.json'),
         "w",
         encoding="UTF-8",
     ) as f:
@@ -269,7 +313,8 @@ def get_backup_uuid_by_keyword(keyword: str, metadata_dir: str):
             ):
                 return keyword
         elif len(keyword) < 6:
-            all_info = get_all_backup_info_sort_by_timestamp(metadata_dir=metadata_dir)
+            all_info = get_all_backup_info_sort_by_timestamp(
+                metadata_dir=metadata_dir)
             if len(all_info) == 0:
                 return 0
             elif len(all_info) >= (int(keyword)) and int(keyword) > 0:
@@ -293,7 +338,8 @@ def scan_backup_info_get_md5_set(backup_info: dict):
             hash = backup_info[info]["md5"]
             md5_set.add(hash)
         elif backup_info[info]["type"] == "dir":
-            kid_md5_set = scan_backup_info_get_md5_set(backup_info[info]["files"])
+            kid_md5_set = scan_backup_info_get_md5_set(
+                backup_info[info]["files"])
             md5_set = md5_set.union(kid_md5_set)
     return md5_set
 
@@ -325,7 +371,8 @@ def subtract_cache_index_count(metadata_dir: str, cache_dir: str, backup_info: d
                 elif os.path.exists(
                     os.path.join(cache_dir, md5[:2], md5[2:]) + ZST_EXT
                 ):
-                    os.remove(os.path.join(cache_dir, md5[:2], md5[2:]) + ZST_EXT)
+                    os.remove(os.path.join(
+                        cache_dir, md5[:2], md5[2:]) + ZST_EXT)
                 del cache_info[md5]
     with open(
         os.path.join(metadata_dir, f"cache_index.json"), "w", encoding="UTF-8"
@@ -374,7 +421,8 @@ def make_backup_util(
 def restore_backup_util(
     backup_uuid: str, metadata_dir: str, cache_dir: str, dst_dir: str
 ):
-    backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
+    backup_info = get_backup_info(
+        backup_uuid=backup_uuid, metadata_dir=metadata_dir)
 
     def restore(dst_dir: str, cache_dir: str, backup_info: dict):
         for info in backup_info:
@@ -422,10 +470,12 @@ def restore_backup_util(
 
 
 def remove_backup_util(backup_uuid: str, metadata_dir: str, cache_dir: str):
-    backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
+    backup_info = get_backup_info(
+        backup_uuid=backup_uuid, metadata_dir=metadata_dir)
     subtract_cache_index_count(metadata_dir, cache_dir, backup_info)
     os.remove(
-        os.path.join(metadata_dir, f"backup_{backup_info['backup_uuid']}_info.json")
+        os.path.join(
+            metadata_dir, f'backup_{backup_info["backup_uuid"]}_info.json')
     )
 
 
@@ -485,7 +535,8 @@ def export_backup_tar_util(
     export_format: ExportFormat = ExportFormat.tar,
     compress_level: int = 1,
 ) -> str:
-    backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
+    backup_info = get_backup_info(
+        backup_uuid=backup_uuid, metadata_dir=metadata_dir)
 
     def add_files_into_tar(
         tar_file_obj: tarfile.TarFile,
@@ -520,7 +571,8 @@ def export_backup_tar_util(
         tar_mode = "w"
     if not os.path.isdir(dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
-    tar_path = os.path.join(dst_dir, get_export_file_name(export_format, backup_uuid))
+    tar_path = os.path.join(
+        dst_dir, get_export_file_name(export_format, backup_uuid))
     kwargs = {}
     if export_format.supports_compress_level and 1 <= compress_level <= 9:
         kwargs["compresslevel"] = compress_level

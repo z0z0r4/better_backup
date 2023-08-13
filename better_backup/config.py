@@ -1,10 +1,14 @@
-from typing import List, Dict
 import os
+from typing import Dict, List
 
-from mcdreforged.api.utils.serializer import Serializable
 from mcdreforged.api.all import ServerInterface
+from mcdreforged.api.utils.serializer import Serializable
+
+from better_backup.constants import server_inst
 
 CONFIG_FILE = os.path.join("config", "Better_Backup.json")
+
+config: "Configuration"
 
 
 class Configuration(Serializable):
@@ -55,6 +59,9 @@ class Configuration(Serializable):
 
     timer_enabled: bool = True
     timer_interval: float = 5.0  # minutes
+
+    def save(self):
+        server_inst.save_config_simple(self, CONFIG_FILE, in_data_folder=False)
 
 
 config = (

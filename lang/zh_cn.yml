@@ -1,11 +1,12 @@
 better_backup:
+  help_title: 查看 Better Backup 用法
   help_message: |
     ------ {1} v{2} ------
     一个支持文件去重的高效备份/回档插件
     §d【格式说明】§r
     §7{0}§r 显示帮助信息
     §7{0} make §e[<message>]§r 创建一个§a备份§r。§e<message>§r 为可选注释
-    §7{0} restore §6[<uuid|index>]§r §c回档§r为备份点 §6<uuid|index>§r 的存档。
+    §7{0} restore §6[<uuid|index>]§r §c回档§r为备份点 §6<uuid|index>§r 的存档
     §7{0} remove §6[<uuid|index>]§r §c删除§r备份点 §6<uuid|index>§r 的存档
     §7{0} confirm§r 再次确认是否进行§c回档§r
     §7{0} abort§r 在任何时候键入此指令可中断§c回档§r
@@ -14,8 +15,7 @@ better_backup:
     §7{0} reset§r 重置备份数据
     §7{0} export §6[<uuid|index>]§r §6[<format>]§r §6[<compress_level>]§r 导出备份数据
     当 §6<uuid|index>§r 未设置或为 §c1§r 时为最新备份点
-    如 §c2§r 为由新到旧的第二个备份点
-    但此处 §cindex§r 不考虑 §cpage§r，请自行计算
+    如 §c2§r 为由新到旧的第二个备份点，不考虑 §cpage§r，请自行计算
     §7{0} timer§r 显示定时器状态
     §7{0} timer enable§r 启动备份定时器
     §7{0} timer disable§r 关闭备份定时器
@@ -27,15 +27,14 @@ better_backup:
   hour: "{0}小时"
   day: "{0}天"
   empty_comment: §7空§r
-  unknown_backup: uuid 输入错误
-  empty_backup: uuid 输入错误，备份点§6{0}§r不存在
-  no_one_backup: 未找到可用备份点
+  unknown_backup: 未找到相应备份点
 
   lock.warning: 正在{0}中，请等待操作执行完成
   operations:
     remove: §a删除备份点§r
     create: §a备份§r
     restore: §c回档§r
+    confirm: 准备§c回档§r
     reset: §c重置r
     export: §a导出§r
 

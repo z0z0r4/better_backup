@@ -1,4 +1,5 @@
 better_backup:
+  help_title: Show the usage of Better Backup
   help_message: |
     ------  {1} v{2} ------
     A plugin that supports efficient backup/rollback with file deduplication
@@ -15,7 +16,7 @@ better_backup:
     §7{0} export §6[<uuid|index>]§r §6[<format>]§r §6[<compress_level>]§r Export backup data
     Latest backup point when §6<uuid|index>§r is not set or §c1§r
     For example, §c2§r is the second backup point by the order of creation date
-    But here §cindex§r does not consider §cpage§r, please calculate it yourself
+    which does not consider §cpage§r, please calculate index yourself
     §7{0} timer§r Show status of the bacckup timer
     §7{0} timer enable§r Start the backup timer
     §7{0} timer disable§r Disable the backup timer
@@ -27,13 +28,13 @@ better_backup:
   hour: "{0} hours"
   day: "{0} days"
   empty_comment: §7empty§r
-  unknown_backup: Not found {0} backup
-  no_one_backup: No one backup can be found
+  unknown_backup: Given backup not found
 
   lock.warning: Executing "{0}", please don't spam
   operations:
     remove: §aDeleting backup§r
     create: §aBacking up§r
+    confirm: Waiting for §crestore§r
     restore: §cRestoring§r
     reset: §cResetingr
     export: §aExporting§r
