@@ -4,7 +4,8 @@
 
 一个支持文件去重的高效备份/回档 MCDR 插件
 
-![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
+![image](https://github.com/z0z0r4/better_backup/assets/78744121/f6c7ea9a-07c2-43b5-8595-9e1b1d7e79ac)
+
 
 ## 特性
 
