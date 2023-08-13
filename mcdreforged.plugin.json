@@ -1,6 +1,6 @@
 {
 	"id": "better_backup",
-	"version": "1.0.8",
+	"version": "1.1.0",
 	"name": "Better Backup",
 	"description": {
 		"en_us": "A plugin that supports efficient backup/rollback with file deduplication",

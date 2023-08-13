@@ -54,6 +54,8 @@ mcd_root/
 
 `!!bb reset` 重置存档数据
 
+`!!bb export [<uuid|index>] [plain|tar|tar_gz|tar_xz] [compress_level]` 导出备份数据
+
 当 `<uuid|index>` 未设置或为 1 时为最新备份点的 uuid
 
 如 `2` 为由新到旧的第二个备份点
@@ -88,6 +90,15 @@ mcd_root/
     "world_names": [ // 要备份的世界列表
         "world"
     ],
+    "save_command": {
+        "save-off": "save-off",
+        "save-all flush": "save-all flush",
+        "save-on": "save-on"
+    },
+    "saved_output": [
+        "Saved the game",
+        "Saved the world"
+    ],
     "backup_data_path": "./better_backup", // 备份路径
     "server_path": "./server", // 服务端位置
     "overwrite_backup_folder": "overwrite", // 覆盖备份文件夹名称
@@ -115,7 +126,11 @@ mcd_root/
 ```
 
 ## TODO
+
+已基本完成，目前只进行 Bug 修复
+
 以下 TODO 优先级从高到低，可遇见的是不会实现
+
 - [ ] 支持锁定指定备份不被自动删除
 - [ ] 支持修改备份点注释
 - [ ] 文件链接处理
