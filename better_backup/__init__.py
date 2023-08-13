@@ -98,7 +98,7 @@ def show_timer_status(source: CommandSource):
         print_message(source, timer.get_next_backup_message(), reply_source=True)
 
 
-def timer_set_enabled(source: CommandSource, value: bool, echo_to_player: bool = True):
+def set_timer_status(source: CommandSource, value: bool, echo_to_player: bool = True):
     config.timer_enabled = value
     timer.set_enabled(value)
     save_config()
@@ -198,53 +198,61 @@ def do_create(source: CommandSource, message: Optional[str] = None):
     global game_saved
     game_saved = False
     if config.turn_off_auto_save:
-        source.get_server().execute("save-off")
-    source.get_server().execute("save-all flush")
+        source.get_server().execute(config.save_command["save-off"])
+    source.get_server().execute(config.save_command["save-all flush"])
     while True:
         time.sleep(0.01)
         if game_saved:
             break
 
-    backup_info = make_backup_util(
-        *config.world_names,
-        metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
-        cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
-        message=message,
-        src_path=config.server_path,
-        config=config,
-    )
-    print_message(
-        source,
-        tr(
-            "create_backup.success",
-            backup_info["backup_uuid"],
-            round(time.time() - start_time, 1),
-            "§l*§r {0} §l*§r {1}".format(
-                format_dir_size(backup_info["backup_size"]), message
-            ),
-        ),
-    )
-    if config.turn_off_auto_save:
-        source.get_server().execute("save-on")
-
-    timer.on_backup_created(backup_uuid=backup_info["backup_uuid"])
-    if config.auto_remove:
-        removed_uuids = auto_remove_util(
+    try:
+        backup_info = make_backup_util(
+            *config.world_names,
             metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
             cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
-            limit=config.backup_count_limit,
+            message=message,
+            src_path=config.server_path,
+            config=config,
         )
-        if len(removed_uuids) == 0:
-            print_message(source, tr("auto_remove.no_one_removed"))
-        else:
-            print_message(
-                source, tr("auto_remove.removed", " §l*§r ".join(removed_uuids))
+        print_message(
+            source,
+            tr(
+                "create_backup.success",
+                backup_info["backup_uuid"],
+                round(time.time() - start_time, 1),
+                "§l*§r {0} §l*§r {1}".format(
+                    format_dir_size(backup_info["backup_size"]), message
+                ),
+            ),
+        )
+
+        # 自动删除
+        timer.on_backup_created(backup_uuid=backup_info["backup_uuid"])
+        if config.auto_remove:
+            removed_uuids = auto_remove_util(
+                metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
+                cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
+                limit=config.backup_count_limit,
             )
+            if len(removed_uuids) == 0:
+                print_message(source, tr("auto_remove.no_one_removed"))
+            else:
+                print_message(
+                    source, tr("auto_remove.removed", " §l*§r ".join(removed_uuids))
+                )
+
+    except ModuleNotFoundError as e:
+        print_message(source, tr("create_backup.fail", e))
+    finally:
+        if config.turn_off_auto_save:  # 务必记得重新开始自动保存
+            source.get_server().execute(config.save_command["save-on"])
 
 
 @new_thread("BB - remove")
 @single_op(tr("operations.remove"))
-def remove_backup(source: CommandSource, uuid: Optional[str] = None, index: Optional[int] = None):
+def remove_backup(
+    source: CommandSource, uuid: Optional[str] = None, index: Optional[int] = None
+):
     uuid_result = process_uuid(source, uuid)
     if uuid_result is None:
         return
@@ -268,7 +276,7 @@ def restore_backup(source: CommandSource, uuid: Optional[str] = None):
     uuid_selected = process_uuid(source, uuid)
     if uuid_selected is None:
         return
-    uuid_selected = uuid
+    # uuid_selected = uuid
 
     print_message(source, tr("restore_backup.echo_action", uuid_selected))
     text = RTextList(
@@ -341,7 +349,7 @@ def do_restore(source: CommandSource):
             ),
             src_path=config.server_path,
         )
-        server_inst.logger.info(f"Restore backup {uuid_selected}")
+        server_inst.logger.info(f"Restore backup §e{uuid_selected}§r")
 
         backup_info = restore_backup_util(
             backup_uuid=uuid_selected,
@@ -521,7 +529,7 @@ def export_backup(
     if uuid_result is None:
         return
     print_message(source, tr("export_backup.start"), reply_source=True)
-    
+
     output_path = export_backup_util(
         uuid_result,
         metadata_dir=os.path.join(config.backup_data_path, METADATA_DIR),
@@ -585,11 +593,19 @@ def register_command(server: PluginServerInterface):
         .then(
             get_literal_node("list")
             .runs(lambda src: list_backups(src))
-            .then(Integer("page").at_min(1).runs(lambda src, ctx: list_backups(src, ctx["page"])))
+            .then(
+                Integer("page")
+                .at_min(1)
+                .runs(lambda src, ctx: list_backups(src, ctx["page"]))
+            )
         )
         .then(get_literal_node("confirm").runs(confirm_restore))
         .then(get_literal_node("abort").runs(trigger_abort))
-        .then(get_literal_node("reload").runs(lambda src: src.get_server().reload_plugin('better_backup')))
+        .then(
+            get_literal_node("reload").runs(
+                lambda src: src.get_server().reload_plugin("better_backup")
+            )
+        )
         .then(get_literal_node("help").runs(lambda src: print_help_message(src)))
         .then(get_literal_node("reset").runs(lambda src: reset_cache(src)))
         .then(
@@ -604,7 +620,10 @@ def register_command(server: PluginServerInterface):
                         lambda src, ctx: export_backup(src, ctx["uuid"], ctx["format"])
                     )
                     .then(
-                        Integer("compress_level").at_min(1).at_max(9).runs(
+                        Integer("compress_level")
+                        .at_min(1)
+                        .at_max(9)
+                        .runs(
                             lambda src, ctx: export_backup(
                                 src, ctx["uuid"], ctx["format"], ctx["compress_level"]
                             )
@@ -616,8 +635,8 @@ def register_command(server: PluginServerInterface):
         .then(
             get_literal_node("timer")
             .runs(lambda src: show_timer_status(src))
-            .then(Literal("enable").runs(lambda src: timer_set_enabled(src, True)))
-            .then(Literal("disable").runs(lambda src: timer_set_enabled(src, False)))
+            .then(Literal("enable").runs(lambda src: set_timer_status(src, True)))
+            .then(Literal("disable").runs(lambda src: set_timer_status(src, False)))
             .then(
                 Literal("set_interval").then(
                     Float("interval")
@@ -642,7 +661,7 @@ def on_load(server: PluginServerInterface, old):
     meta = server.get_self_metadata()
     HelpMessage = tr("help_message", PREFIX, meta.name, meta.version)
     timer = Timer(server=server_inst)
-    timer_set_enabled(
+    set_timer_status(
         server.get_plugin_command_source(), config.timer_enabled, echo_to_player=False
     )
     timer_run_flag = True
@@ -654,10 +673,7 @@ def on_load(server: PluginServerInterface, old):
 
 def on_info(server: PluginServerInterface, info: Info):
     if not info.is_user:
-        if info.content in [
-            "Saved the game",  # 1.13+
-            "Saved the world",  # 1.12-
-        ]:
+        if info.content in config.saved_output:
             global game_saved
             game_saved = True
 

@@ -2,28 +2,37 @@
 
 更少的磁盘占用，永远不会有重复文件。
 
-一个支持文件去重的高效备份/回档 MCDR 插件，自带定时器
+一个支持文件去重的高效备份/回档 MCDR 插件
 
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
+
+## 特性
+
+- 无数备份点只占用不到两个存档的空间，只取决于服务器活跃程度而非备份频率
+- 自带定时器，无需单独安装插件
+- zstd 压缩，节省一半空间，毫不影响回档速度
+- 支持自动删除过旧备份，只保留指定数量的备份
+- 轻松导出备份为压缩包
+- 针对大存档和读写性能低下的机械硬盘，速度显著快于 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) [基准测试](https://github.com/z0z0r4/better_backup/issues/5)
+
+---
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
 ```
 mcd_root/
-    server.py
-
-    server/
-        world/
-
     better_backup/
         cache/
             ...
+
         metadata/
             ...
 
-        temp/
+        export_backup/
+            ...
+
+        overwrite/
             world/
 ```
-
 
 ## 命令格式说明
 
@@ -104,3 +113,16 @@ mcd_root/
     "timer_interval": 5.0 // 定时间隔
 }
 ```
+
+## TODO
+以下 TODO 优先级从高到低，可遇见的是不会实现
+- [ ] 支持锁定指定备份不被自动删除
+- [ ] 支持修改备份点注释
+- [ ] 文件链接处理
+- [ ] SQlite 支持
+- [ ] 备份点还原文件 stat
+- [ ] 支持正则忽略文件/目录
+- [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
+- [ ] 云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘
+- [ ] 多盘备份，将备份同步保存到多个路径
+- [ ] 支持 Diff 备份数据库

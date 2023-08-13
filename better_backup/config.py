@@ -15,10 +15,18 @@ class Configuration(Serializable):
     ignored_folders: List[str] = []
     ignored_extensions: List[str] = [".lock"]
 
-    world_names: List[str] = [
-        'world'
+    world_names: List[str] = ["world"]
+    # 自定义保存命令
+    save_command: Dict[str, str] = {
+        "save-off": "save-off",
+        "save-all flush": "save-all flush",
+        "save-on": "save-on",
+    }
+    # 自定义保存输出
+    saved_output: List[str] = [
+        "Saved the game",  # 1.13+
+        "Saved the world",  # 1.12-
     ]
-
     backup_data_path: str = "./better_backup"
     server_path: str = "./server"
     overwrite_backup_folder: str = "overwrite"
@@ -42,16 +50,20 @@ class Configuration(Serializable):
         "list": 0,
         "reset": 2,
         "timer": 2,
-        "export": 4
+        "export": 4,
     }
 
     timer_enabled: bool = True
     timer_interval: float = 5.0  # minutes
 
 
-config = ServerInterface.get_instance().as_plugin_server_interface().load_config_simple(
-    CONFIG_FILE,
-    target_class=Configuration,
-    in_data_folder=False,
-    source_to_reply=None,
+config = (
+    ServerInterface.get_instance()
+    .as_plugin_server_interface()
+    .load_config_simple(
+        CONFIG_FILE,
+        target_class=Configuration,
+        in_data_folder=False,
+        source_to_reply=None,
+    )
 )
