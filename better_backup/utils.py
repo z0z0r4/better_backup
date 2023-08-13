@@ -5,35 +5,47 @@ import time
 import json
 import uuid
 import tarfile
+import importlib
+import sys
 from mcdreforged.api.all import *
-from better_backup.config import Configuration
-from typing import Optional, NamedTuple
+from better_backup.config import config, Configuration
+from typing import Optional
 from enum import Enum
+
+
+pyzstd = None
+try:
+    pyzstd = importlib.import_module("pyzstd")
+except ModuleNotFoundError as e:
+    pass
 
 SRC_DIR = "src"
 METADATA_DIR = "metadata"
 CACHE_DIR = "cache"
 TEMP_DIR = "overwrite"
+ZST_EXT = ".zst"
+
 
 class ExportFormat(Enum):
-    plain = ('', False)
-    tar = ('.tar', False)
-    tar_gz = ('.tar.gz', True)
-    tar_xz = ('.tar.xz', False)
+    plain = ("", False)
+    tar = (".tar", False)
+    tar_gz = (".tar.gz", True)
+    tar_xz = (".tar.xz", False)
 
     def __init__(self, suffix, supports_compress_level):
         self.suffix = suffix
         self.supports_compress_level = supports_compress_level
 
     @classmethod
-    def of(cls, mode: str) -> 'ExportFormat':
+    def of(cls, mode: str) -> "ExportFormat":
         try:
             return cls[mode]
         except KeyError:
             return cls.plain
-        
+
     def get_file_name(self, base_name: str) -> str:
         return base_name + self.suffix
+
 
 def tr(translation_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(
@@ -91,8 +103,8 @@ def walk_and_cache_files(
                 result[name] = {
                     "type": "file",
                     "md5": get_file_md5_and_cache(full_path, cache_folder),
-                    "mtime": f_stat.st_mtime,
-                    "size": f_stat.st_size,
+                    # "mtime": f_stat.st_mtime,
+                    # "size": f_stat.st_size,
                 }
                 total_size += f_stat.st_size
             else:
@@ -111,7 +123,7 @@ def walk_and_cache_files(
     return result, total_size
 
 
-def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
+def get_file_md5_by_file_obj(obj, range_size: int = 131072) -> str:
     """通过文件对象获取文件的md5值"""
     md5 = hashlib.md5()
     while True:
@@ -124,19 +136,29 @@ def get_file_md5_by_file_obj(obj, range_size: int = 1024 * 1024) -> str:
 
 def get_file_md5_and_cache(src_file: str, cache_folder: str):
     """获取文件的md5值，并将文件复制到缓存文件夹中"""
-    if not os.path.exists(os.path.split(src_file)[0]):
-        os.makedirs(os.path.split(src_file)[0])
-    with open(src_file, "rb") as f:
-        md5 = get_file_md5_by_file_obj(f)
+    os.makedirs(os.path.split(src_file)[0], exist_ok=True)
+    with open(src_file, "rb") as fsrc:
+        md5 = get_file_md5_by_file_obj(fsrc)
         dst_file = os.path.join(cache_folder, md5[:2], md5[2:])
-        f.seek(0, 0)
-        if not os.path.exists(dst_file):
-            with open(dst_file, "wb") as f2:
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    f2.write(data)
+        zst_dst_file = dst_file + ZST_EXT
+        fsrc.seek(0, 0)
+        if not (os.path.exists(dst_file) or os.path.exists(zst_dst_file)):
+            if config.backup_compress_level:
+                if pyzstd is None:  # just raise
+                    raise ModuleNotFoundError(
+                        tr("create_backup.zstd_not_found", sys.executable)
+                    )
+                with open(zst_dst_file, "wb") as fdst:
+                    pyzstd.compress_stream(
+                        fsrc, fdst, level_or_option=config.backup_compress_level
+                    )
+            else:
+                with open(dst_file, "wb") as fdst:
+                    while True:
+                        data = fsrc.read(131072)
+                        if not data:
+                            break
+                        fdst.write(data)
     return md5
 
 
@@ -242,16 +264,19 @@ def get_latest_backup_uuid(metadata_dir: str) -> Optional[str]:
 def get_backup_uuid_by_keyword(keyword: str, metadata_dir: str):
     try:
         if len(keyword) == 6:
-            if check_backup_uuid_available(backup_uuid=keyword, metadata_dir=metadata_dir):
+            if check_backup_uuid_available(
+                backup_uuid=keyword, metadata_dir=metadata_dir
+            ):
                 return keyword
-        elif len(keyword) <6:
+        elif len(keyword) < 6:
             all_info = get_all_backup_info_sort_by_timestamp(metadata_dir=metadata_dir)
             if len(all_info) == 0:
                 return 0
-            elif len(all_info) >= (int(keyword)) and int(keyword)>0:
-                return all_info[int(keyword)-1]["backup_uuid"]
+            elif len(all_info) >= (int(keyword)) and int(keyword) > 0:
+                return all_info[int(keyword) - 1]["backup_uuid"]
     except:
         return
+
 
 def check_backup_uuid_available(backup_uuid: str, metadata_dir: str) -> bool:
     try:
@@ -295,7 +320,12 @@ def subtract_cache_index_count(metadata_dir: str, cache_dir: str, backup_info: d
         for md5 in md5_set:
             cache_info[md5] -= 1
             if cache_info[md5] == 0:
-                os.remove(os.path.join(cache_dir, md5[:2], md5[2:]))
+                if os.path.exists(os.path.join(cache_dir, md5[:2], md5[2:])):
+                    os.remove(os.path.join(cache_dir, md5[:2], md5[2:]))
+                elif os.path.exists(
+                    os.path.join(cache_dir, md5[:2], md5[2:]) + ZST_EXT
+                ):
+                    os.remove(os.path.join(cache_dir, md5[:2], md5[2:]) + ZST_EXT)
                 del cache_info[md5]
     with open(
         os.path.join(metadata_dir, f"cache_index.json"), "w", encoding="UTF-8"
@@ -321,11 +351,11 @@ def make_backup_util(
             cache_folder=cache_dir,
             ignored_files=config.ignored_files,
             ignored_extensions=config.ignored_extensions,
-            ignored_folders=config.ignored_folders
+            ignored_folders=config.ignored_folders,
         )
         total_files_info[src_dir] = {
             "type": "dir",
-            "size": files_size,
+            # "size": files_size,
             "files": walk_files_info,
         }
         total_size += files_size
@@ -342,7 +372,8 @@ def make_backup_util(
 
 
 def restore_backup_util(
-    backup_uuid: str, metadata_dir: str, cache_dir: str, dst_dir: str):
+    backup_uuid: str, metadata_dir: str, cache_dir: str, dst_dir: str
+):
     backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
 
     def restore(dst_dir: str, cache_dir: str, backup_info: dict):
@@ -355,14 +386,32 @@ def restore_backup_util(
                     cache_dir=cache_dir,
                 )
             elif backup_info[info]["type"] == "file":
-                copyfile(
-                    os.path.join(
-                        cache_dir,
-                        backup_info[info]["md5"][:2],
-                        backup_info[info]["md5"][2:],
-                    ),
-                    os.path.join(dst_dir, info),
+                src = os.path.join(
+                    cache_dir,
+                    backup_info[info]["md5"][:2],
+                    backup_info[info]["md5"][2:],
                 )
+                zst_src = src + ZST_EXT  # md5.zst
+                dst = os.path.join(dst_dir, info)
+                # Try .zst first
+                # 既然 config 默认开启那就应该先用 .zst
+                if os.path.exists(zst_src):
+                    if pyzstd is None:
+                        raise ModuleNotFoundError(
+                            str(tr("restore_backup.zstd_not_found", sys.executable))
+                        )
+                    with open(zst_src, "rb") as fsrc:
+                        with open(dst, "wb") as fdst:
+                            pyzstd.decompress_stream(fsrc, fdst)
+                elif os.path.exists(src):
+                    copyfile(
+                        os.path.join(
+                            cache_dir,
+                            backup_info[info]["md5"][:2],
+                            backup_info[info]["md5"][2:],
+                        ),
+                        dst,
+                    )
 
     restore(
         dst_dir=dst_dir,
@@ -379,43 +428,71 @@ def remove_backup_util(backup_uuid: str, metadata_dir: str, cache_dir: str):
         os.path.join(metadata_dir, f"backup_{backup_info['backup_uuid']}_info.json")
     )
 
+
 def auto_remove_util(metadata_dir: str, cache_dir: str, limit: int) -> list:
     all_backup_info = get_all_backup_info_sort_by_timestamp(metadata_dir)
     count = len(all_backup_info)
     removed_uuids = []
     if count > limit:
         for backup_info in all_backup_info[limit:]:
-            remove_backup_util(backup_uuid=backup_info["backup_uuid"],
-                               metadata_dir=metadata_dir,
-                               cache_dir=cache_dir)
+            remove_backup_util(
+                backup_uuid=backup_info["backup_uuid"],
+                metadata_dir=metadata_dir,
+                cache_dir=cache_dir,
+            )
             removed_uuids.append(backup_info["backup_uuid"])
     return removed_uuids
 
-def export_backup_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str, export_format: ExportFormat, compress_level: int = 1):
+
+def export_backup_util(
+    backup_uuid: str,
+    metadata_dir: str,
+    cache_dir,
+    dst_dir: str,
+    export_format: ExportFormat,
+    compress_level: int = 1,
+):
     if export_format == ExportFormat.plain:
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
         rmtree(dst_dir)
         backup_info = get_backup_info(backup_uuid, metadata_dir=metadata_dir)
-        restore_backup_util(backup_uuid=backup_info["backup_uuid"],
-                            metadata_dir=metadata_dir,
-                            cache_dir=cache_dir,
-                            dst_dir=dst_dir)
+        restore_backup_util(
+            backup_uuid=backup_info["backup_uuid"],
+            metadata_dir=metadata_dir,
+            cache_dir=cache_dir,
+            dst_dir=dst_dir,
+        )
         output_path = dst_dir
     else:
-        output_path = export_backup_tar_util(backup_uuid, metadata_dir, cache_dir, dst_dir, export_format, compress_level)
+        output_path = export_backup_tar_util(
+            backup_uuid, metadata_dir, cache_dir, dst_dir, export_format, compress_level
+        )
     return output_path
 
 
 def get_export_file_name(backup_format: ExportFormat, backup_uuid: str):
     if backup_format == ExportFormat.plain:
-        raise ValueError('plain mode is not supported')
+        raise ValueError("plain mode is not supported")
     return backup_format.get_file_name(backup_uuid)
 
-def export_backup_tar_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_dir: str, export_format: ExportFormat = ExportFormat.tar, compress_level: int = 1) -> str:
+
+def export_backup_tar_util(
+    backup_uuid: str,
+    metadata_dir: str,
+    cache_dir,
+    dst_dir: str,
+    export_format: ExportFormat = ExportFormat.tar,
+    compress_level: int = 1,
+) -> str:
     backup_info = get_backup_info(backup_uuid=backup_uuid, metadata_dir=metadata_dir)
 
-    def add_files_into_tar(tar_file_obj: tarfile.TarFile, parent_dir: str ,cache_dir: str, backup_info: dict):
+    def add_files_into_tar(
+        tar_file_obj: tarfile.TarFile,
+        parent_dir: str,
+        cache_dir: str,
+        backup_info: dict,
+    ):
         for info in backup_info:
             if backup_info[info]["type"] == "dir":
                 tar_file_obj = add_files_into_tar(
@@ -425,27 +502,33 @@ def export_backup_tar_util(backup_uuid: str, metadata_dir: str, cache_dir, dst_d
                     cache_dir=cache_dir,
                 )
             elif backup_info[info]["type"] == "file":
-                tar_file_obj.add(name=os.path.join(
+                tar_file_obj.add(
+                    name=os.path.join(
                         cache_dir,
                         backup_info[info]["md5"][:2],
                         backup_info[info]["md5"][2:],
                     ),
-                    arcname=os.path.join(parent_dir, info)
+                    arcname=os.path.join(parent_dir, info),
                 )
         return tar_file_obj
 
     if export_format == ExportFormat.tar_gz:
-        tar_mode = 'w:gz'
+        tar_mode = "w:gz"
     elif export_format == ExportFormat.tar_xz:
-        tar_mode = 'w:xz'
+        tar_mode = "w:xz"
     elif tar_mode == ExportFormat.tar:
-        tar_mode = 'w'
+        tar_mode = "w"
     if not os.path.isdir(dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
     tar_path = os.path.join(dst_dir, get_export_file_name(export_format, backup_uuid))
     kwargs = {}
     if export_format.supports_compress_level and 1 <= compress_level <= 9:
-        kwargs['compresslevel'] = compress_level
+        kwargs["compresslevel"] = compress_level
     with tarfile.open(tar_path, tar_mode, **kwargs) as backup_tar_obj:
-        add_files_into_tar(tar_file_obj=backup_tar_obj, cache_dir=cache_dir, backup_info=backup_info["backup_files"], parent_dir=backup_info["backup_uuid"])
+        add_files_into_tar(
+            tar_file_obj=backup_tar_obj,
+            cache_dir=cache_dir,
+            backup_info=backup_info["backup_files"],
+            parent_dir=backup_info["backup_uuid"],
+        )
     return tar_path

@@ -1,32 +1,38 @@
 # Better_Backup
-Less disk usage, never duplicate files
 
 更少的磁盘占用，永远不会有重复文件。
 
-A plugin that supports efficient backup/rollback with file deduplication
-
-一个支持文件去重的高效备份/回档 MCDR 插件，自带定时器
+一个支持文件去重的高效备份/回档 MCDR 插件
 
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/7a5464d0-229b-47bf-aa8a-9abb02dd1f5c)
+
+## 特性
+
+- 无数备份点只占用不到两个存档的空间，只取决于服务器活跃程度而非备份频率
+- 自带定时器，无需单独安装插件
+- zstd 压缩，节省一半空间，毫不影响回档速度
+- 支持自动删除过旧备份，只保留指定数量的备份
+- 轻松导出备份为压缩包
+- 针对大存档和读写性能低下的机械硬盘，速度显著快于 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) [基准测试](https://github.com/z0z0r4/better_backup/issues/5)
+
+---
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
 ```
 mcd_root/
-    server.py
-
-    server/
-        world/
-
     better_backup/
         cache/
             ...
+
         metadata/
             ...
 
-        temp/
+        export_backup/
+            ...
+
+        overwrite/
             world/
 ```
-
 
 ## 命令格式说明
 
@@ -66,119 +72,57 @@ mcd_root/
 
 ## 配置文件选项说明
 
-配置文件为 `config/better_backup.json`。它会在第一次运行时自动生成
+配置文件为 `config/better_backup.json`。它会在第一次运行时自动生成，默认值如下（不支持注释）：
 
-## `size_display` 
-
-默认值: `True`
-
-控制是否显示文件大小信息。
-
-## `turn_off_auto_save` 
-
-默认值: `True`
-
-控制是否关闭自动保存功能。
-
-## `timer_enabled`
-
-默认值: `True`
-
-是否启动备份定时器。
-
-## `export_backup_folder`
-
-默认值: `./export_backup`
-
-指定备份导出的路径
-
-## `export_backup_format`
-
-默认值: `tar_gz`
-
-指定备份导出的格式
-
-## `export_backup_compress_level`
-
-默认值: `1`
-
-设置备份导出为压缩文件时的压缩等级
-
-## `timer_interval`
-
-默认值：`5.0`
-
-备份定时器触发间隔，单位为分钟。
-
-## `ignored_files` 
-
-默认值: `["session.lock"]`
-
-指定要忽略的文件列表。
-
-## `ignored_folders` 
-
-默认值: `[]`
-
-指定要忽略的文件夹列表。
-
-## `ignored_extensions` 
-
-默认值: `[".lock"]`
-
-指定要忽略的文件扩展名列表。
-
-## `world_names` 
-
-默认值: `['world']`
-
-指定世界名称列表。
-
-## `backup_data_path` 
-
-默认值: `"./better_backup"`
-
-指定备份数据的路径。
-
-## `server_path` 
-
-默认值: `"./server"`
-
-指定服务器路径。
-
-## `overwrite_backup_folder` 
-
-默认值: `"overwrite"`
-
-指定覆盖备份文件夹名称。
-
-## `minimum_permission_level` 
-
-默认值: 
-```json
+```json5
 {
-  "make": 1,
-  "restore": 2,
-  "remove": 2,
-  "confirm": 1,
-  "abort": 1,
-  "reload": 2,
-  "list": 0,
-  "reset": 2,
-  "timer": 2
+    "size_display": true, // 是否显示文件大小信息
+    "turn_off_auto_save": true, // 是否关闭自动保存
+    "ignored_files": [ // 不备份的文件
+        "session.lock"
+    ],
+    "ignored_folders": [], // 不备份的目录
+    "ignored_extensions": [ // 不备份的扩展名
+        ".lock"
+    ],
+    "world_names": [ // 要备份的世界列表
+        "world"
+    ],
+    "backup_data_path": "./better_backup", // 备份路径
+    "server_path": "./server", // 服务端位置
+    "overwrite_backup_folder": "overwrite", // 覆盖备份文件夹名称
+    "backup_compress_level": 3, // 备份压缩等级 (1~22)，为 0 时禁用
+    "export_backup_folder": "./export_backup", // 备份导出路径
+    "export_backup_format": "tar_gz", // 备份导出格式 (plain, tar, tar_gz, tar_xz)
+    "export_backup_compress_level": 1, // 备份压缩等级
+    "auto_remove": true, // 自动删除旧备份
+    "backup_count_limit": 20, // 备份留存数量
+    "minimum_permission_level": { // MCDR 指令权限等级
+        "make": 1, // 创建
+        "restore": 2, // 回档
+        "remove": 2, // 删除
+        "confirm": 1, // 确认
+        "abort": 1, // 终止
+        "reload": 2, // 重载
+        "list": 0, // 查看列表
+        "reset": 2, // 重置
+        "timer": 2, // 操作定时器
+        "export": 4 // 导出
+    },
+    "timer_enabled": true, // 是否启用定时备份
+    "timer_interval": 5.0 // 定时间隔
 }
 ```
 
-指定各操作的最低权限级别要求。
-
-- `make`: 创建备份操作所需的最低权限级别。
-- `restore`: 恢复备份操作所需的最低权限级别。
-- `remove`: 删除备份操作所需的最低权限级别。
-- `confirm`: 确认操作所需的最低权限级别。
-- `abort`: 取消操作所需的最低权限级别。
-- `reload`: 重新加载操作所需的最低权限级别。
-- `list`: 列出操作所需的最低权限级别。
-- `reset`: 重置操作所需的最低权限级别。
-- `timer`: 操作定时器所需的最低权限级别。
-
-Based on [QuickBackupM](https://github.com/TISUnion/QuickBackupM)
+## TODO
+以下 TODO 优先级从高到低，可遇见的是不会实现
+- [ ] 支持锁定指定备份不被自动删除
+- [ ] 支持修改备份点注释
+- [ ] 文件链接处理
+- [ ] SQlite 支持
+- [ ] 备份点还原文件 stat
+- [ ] 支持正则忽略文件/目录
+- [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
+- [ ] 云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘
+- [ ] 多盘备份，将备份同步保存到多个路径
+- [ ] 支持 Diff 备份数据库
