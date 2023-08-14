@@ -134,7 +134,7 @@ mcd_root/
 - [ ] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
-- [ ] 导出方式改为 plain, tar, tar.zst
+- [ ] 导出支持 `.tar.zst`
 - [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
 
 ## Wontdo
