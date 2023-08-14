@@ -51,7 +51,7 @@ better_backup:
     zstd_not_found: '请安装 pyzstd 或关闭备份压缩功能：§6{0} -m pip install pyzstd§r'
   
   auto_remove:
-    reomved: 已自动删除备份点 §e{0}§r
+    removed: 已自动删除备份点 §e{0}§r
     no_one_removed: 没有备份被自动删除
 
   restore_backup:
