@@ -70,7 +70,7 @@ better_backup:
     success: §aExport§r successfully, at {0}
 
   auto_remove:
-    reomved: Auto Deleted backup §e{0}§r
+    removed: Auto Deleted backup §e{0}§r
     no_one_removed: No one backup was auto deleted
 
   confirm_restore.nothing_to_confirm: Nothing to confirm
