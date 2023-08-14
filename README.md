@@ -1,38 +1,36 @@
 # Better_Backup
 
-更少的磁盘占用，永远不会有重复文件。
-
-一个支持文件去重的高效备份/回档 MCDR 插件
+一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
 
 ![image](https://github.com/z0z0r4/better_backup/assets/78744121/f6c7ea9a-07c2-43b5-8595-9e1b1d7e79ac)
 
 
 ## 特性
 
-- 无数备份点只占用不到两个存档的空间，只取决于服务器活跃程度而非备份频率
-- 自带定时器，无需单独安装插件
-- zstd 压缩，节省一半空间，毫不影响回档速度
-- 支持自动删除过旧备份，只保留指定数量的备份
-- 轻松导出备份为压缩包
-- 针对大存档和读写性能低下的机械硬盘，速度显著快于 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) [基准测试](https://github.com/z0z0r4/better_backup/issues/5)
+- 避免重复文件，比 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) 节省 20% ~ 90% 备份空间  
+  对于大存档和读写性能低下的硬盘，速度显著优于 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) ([基准测试](https://github.com/z0z0r4/better_backup/issues/5))
+- 内置定时备份
+- 支持 zstd 压缩，每个文件节省 50% 以上空间，且不影响回档速度
+- 支持自动删除过旧备份，保留指定数量的备份
+- 轻松导出完整备份
 
 ---
 
 备份的存档将会存放至 `better_backup` 文件夹中，文件目录格式如下：
-```
+```python
 mcd_root/
     better_backup/
-        cache/
+        cache/ # 备份文件
             ...
 
-        metadata/
+        metadata/ # 元数据
             ...
 
-        export_backup/
+        export_backup/ # 导出
             ...
 
-        overwrite/
-            world/
+        overwrite/ # 留底
+            ...
 ```
 
 ## 命令格式说明
@@ -59,9 +57,7 @@ mcd_root/
 
 当 `<uuid|index>` 未设置或为 1 时为最新备份点的 uuid
 
-如 `2` 为由新到旧的第二个备份点
-
-但此处 `index` 不考虑 `page`，请自行计算
+如 `2` 为由新到旧的第二个备份点，此处不考虑 `page`，需自行计算
 
 `!!bb timer` 显示定时器状态
 
@@ -103,7 +99,7 @@ mcd_root/
     "backup_data_path": "./better_backup", // 备份路径
     "server_path": "./server", // 服务端位置
     "overwrite_backup_folder": "overwrite", // 覆盖备份文件夹名称
-    "backup_compress_level": 3, // 备份压缩等级 (1~22)，为 0 时禁用
+    "backup_compress_level": 3, // 备份 zst 压缩等级 (1~22)，为 0 时禁用
     "export_backup_folder": "./export_backup", // 备份导出路径
     "export_backup_format": "tar_gz", // 备份导出格式 (plain, tar, tar_gz, tar_xz)
     "export_backup_compress_level": 1, // 备份压缩等级
@@ -126,11 +122,11 @@ mcd_root/
 }
 ```
 
-## TODO
+## ~~Impossible~~ Todo
 
 已基本完成，目前只进行 Bug 修复
 
-以下 TODO 优先级从高到低，可遇见的是不会实现
+以下 TODO 优先级从高到低 ~~，可遇见的是不会实现~~
 
 - [ ] 支持锁定指定备份不被自动删除
 - [ ] 支持修改备份点注释
@@ -138,7 +134,11 @@ mcd_root/
 - [ ] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
+- [ ] 导出方式改为 plain, tar, tar.zst
 - [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
-- [ ] 云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘
-- [ ] 多盘备份，将备份同步保存到多个路径
-- [ ] 支持 Diff 备份数据库
+
+## Wontdo
+
+- [ ] ~~云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘~~
+- [ ] ~~多盘备份，将备份同步保存到多个路径~~
+- [ ] ~~支持 Diff 备份数据库~~

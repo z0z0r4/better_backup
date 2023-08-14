@@ -1,10 +1,14 @@
-from typing import List, Dict
 import os
+from typing import Dict, List
 
-from mcdreforged.api.utils.serializer import Serializable
 from mcdreforged.api.all import ServerInterface
+from mcdreforged.api.utils.serializer import Serializable
+
+from better_backup.constants import server_inst
 
 CONFIG_FILE = os.path.join("config", "Better_Backup.json")
+
+config: "Configuration"
 
 
 class Configuration(Serializable):
@@ -16,17 +20,18 @@ class Configuration(Serializable):
     ignored_extensions: List[str] = [".lock"]
 
     world_names: List[str] = ["world"]
-    # 自定义保存命令
+
     save_command: Dict[str, str] = {
         "save-off": "save-off",
         "save-all flush": "save-all flush",
         "save-on": "save-on",
     }
-    # 自定义保存输出
-    saved_output: List[str] = [
+
+    saved_output: List[str] = [ # to detect game save
         "Saved the game",  # 1.13+
         "Saved the world",  # 1.12-
     ]
+
     backup_data_path: str = "./better_backup"
     server_path: str = "./server"
     overwrite_backup_folder: str = "overwrite"
@@ -55,6 +60,9 @@ class Configuration(Serializable):
 
     timer_enabled: bool = True
     timer_interval: float = 5.0  # minutes
+
+    def save(self):
+        server_inst.save_config_simple(self, CONFIG_FILE, in_data_folder=False)
 
 
 config = (

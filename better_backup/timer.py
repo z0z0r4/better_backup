@@ -1,32 +1,20 @@
 import time
-from threading import Thread, Event
 
 from mcdreforged.api.all import *
 
-from better_backup.config import Configuration, CONFIG_FILE
+import better_backup.operations
+from better_backup.config import config
+from better_backup.constants import server_inst
 from better_backup.utils import *
-
-config: Configuration
-
-
-def load_config(server: PluginServerInterface):
-    global config
-    config = server.load_config_simple(
-        CONFIG_FILE,
-        target_class=Configuration,
-        in_data_folder=False,
-        source_to_reply=None,
-        echo_in_console=False,
-    )
 
 
 class Timer():
     def __init__(self, server: PluginServerInterface):
-        load_config(server)
+        self.running = False
         self.time_since_backup = time.time()
         self.timer_interval: float = config.timer_interval
         self.server = server
-        self.is_enabled = False
+        self.is_enabled = config.timer_enabled
         self.is_backup_triggered = False
 
     @staticmethod
@@ -43,29 +31,43 @@ class Timer():
             "better_backup.timer.{}".format(translation_key), *args
         )
 
-    def set_interval(self, timer_interval: float):
+    def _set_interval(self, timer_interval: float):
         self.timer_interval = timer_interval
-        self.reset_timer()
+        config.timer_interval = timer_interval
+        config.save()
+        self._reset()
+
+    def set_interval(self, source: CommandSource, interval: float):
+        self._set_interval(interval)
+        source.reply(Timer.tr("set_interval", interval))
+        self.broadcast_next_backup_time()
 
     def broadcast(self, message):
         if self.server.is_server_startup():
             print_message(self.server.get_plugin_command_source(), message)
         else:
-            print_message(self.server.get_plugin_command_source(), message, only_server=True)
+            print_message(self.server.get_plugin_command_source(),
+                          message, only_server=True)
 
     def set_enabled(self, value: bool = True):
         self.is_enabled = value
-        self.reset_timer()
+        self._reset()
 
-    def reset_timer(self):
+    def _reset(self):
         self.time_since_backup = time.time()
+
+    def reset(self, source: CommandSource):
+        self._reset()
+        source.reply(Timer.tr("reset_timer"))
+        self.broadcast_next_backup_time()
 
     def get_next_backup_message(self):
         return self.tr(
             "get_next_backup_message",
             time.strftime(
                 "%Y/%m/%d %H:%M:%S",
-                time.localtime(self.time_since_backup + self.get_backup_interval()),
+                time.localtime(self.time_since_backup +
+                               self.get_backup_interval()),
             ),
         )
 
@@ -74,6 +76,67 @@ class Timer():
 
     def on_backup_created(self, backup_uuid: dict):
         self.broadcast(self.tr("on_backup_created"))
-        self.reset_timer()
+        self._reset()
         self.broadcast_next_backup_time()
         self.is_backup_triggered = True
+
+    @new_thread(thread_name("timer"))
+    def run(self):
+        self.running = True
+        while self.running:  # loop until stop
+            while self.running:  # loop for backup interval
+                time.sleep(0.1)
+                if time.time() - self.time_since_backup > self.get_backup_interval():
+                    break
+            if self.is_enabled and self.server.is_server_startup():
+                self.broadcast(
+                    self.tr("run.trigger_time", self.get_interval()))
+                self.is_backup_triggered = False
+
+                better_backup.operations.do_create(
+                    self.server.get_plugin_command_source(),
+                    str(self.tr("run.timed_backup", "timer")),
+                )
+
+                if self.is_backup_triggered:
+                    self.broadcast(self.tr("on_backup_succeed"))
+                else:
+                    self.broadcast(self.tr("on_backup_failed"))
+                    self._reset()
+                    self.broadcast_next_backup_time()
+
+    def stop(self):
+        self.running = False
+
+    def show_status(self, source: CommandSource):
+        print_message(
+            source, Timer.tr("status.clock_enabled", self.is_enabled), reply_source=True
+        )
+        print_message(
+            source,
+            Timer.tr("status.clock_interval", round(config.timer_interval, 2)),
+            reply_source=True,
+        )
+        if self.is_enabled:
+            print_message(source, self.get_next_backup_message(),
+                          reply_source=True)
+
+    def set_status(self, source: CommandSource, value: bool, echo_to_player: bool = True):
+        config.timer_enabled = value
+        self.set_enabled(value)
+        config.save()
+        print_message(
+            source,
+            Timer.tr(
+                "set_enabled.timer",
+                Timer.tr("set_enabled.start") if value else Timer.tr(
+                    "set_enabled.stop"),
+            ),
+            only_server=not echo_to_player,
+        )
+        if value:
+            self.broadcast_next_backup_time()
+
+
+timer = Timer(server_inst)
+timer.run()
