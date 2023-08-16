@@ -1,4 +1,5 @@
 better_backup:
+  metadata_conflict: This version we droped backward compatibility. Export backups from old version and reset data to continue.
   help_title: Show the usage of Better Backup
   help_message: |
     ------  {1} v{2} ------
@@ -28,6 +29,7 @@ better_backup:
   hour: "{0} hours"
   day: "{0} days"
   empty_comment: §7empty§r
+  no_one_backup: No backup found
   unknown_backup: Given backup not found
 
   lock.warning: Executing "{0}", please don't spam
@@ -41,14 +43,14 @@ better_backup:
 
   remove_backup:
     success: Backup §6{0}§r delete §asuccess§r
-    fail: "Backup §6{0}§r delete §4failed§r, error code {1}"
+    fail: "Backup §6{0}§r delete §4failed§r: {1}"
 
   create_backup:
     start: §aBacking up§r, please wait
     abort.plugin_unload: Plugin unloaded, §aback up§r aborted!
     abort.no_slot: Available backup not found, §aback up§r aborted!
     success: Backup §e{0}§r successfully, time elapsed §6{1}§rs {2}
-    fail: §aBack up§r unsuccessfully, error code {0}
+    fail: "§aBack up§r unsuccessfully: {0}"
     zstd_not_found: 'Install pyzstd or disable compression plz: §6{0} -m pip install pyzstd§r'
 
   restore_backup:
@@ -59,7 +61,7 @@ better_backup:
     abort_hover: Click to abort
     success: §cRestore§r successfully
     fail: §cRestore§r unsuccessfully, error code {0}
-    zstd_not_found: 'Install pyzstd to restore compressed backup: §6{0} -m pip install pyzstd§r'
+    zstd_not_found: 'pip install pyzstd to restore compressed backup'
 
   reset_backup:
     start: Gonna reset the backup data
@@ -68,9 +70,10 @@ better_backup:
   export_backup:
     start: Exporting the backup data
     success: §aExport§r successfully, at {0}
+    zstd_not_found: 'pip install pyzstd or use another export format plz'
 
   auto_remove:
-    reomved: Auto Deleted backup §e{0}§r
+    removed: Auto Deleted backup §e{0}§r
     no_one_removed: No one backup was auto deleted
 
   confirm_restore.nothing_to_confirm: Nothing to confirm

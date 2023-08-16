@@ -21,9 +21,9 @@
 mcd_root/
     better_backup/
         cache/ # 备份文件
-            ...
-
-        metadata/ # 元数据
+            00/
+            0a/
+            0b/
             ...
 
         export_backup/ # 导出
@@ -31,6 +31,8 @@ mcd_root/
 
         overwrite/ # 留底
             ...
+        
+        storage.db # 数据库
 ```
 
 ## 命令格式说明
@@ -131,7 +133,7 @@ mcd_root/
 - [ ] 支持锁定指定备份不被自动删除
 - [ ] 支持修改备份点注释
 - [ ] 文件链接处理
-- [ ] SQlite 支持
+- [x] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
 - [ ] 导出方式改为 plain, tar, tar.zst

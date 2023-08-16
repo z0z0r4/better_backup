@@ -162,6 +162,9 @@ cython_debug/
 # MCDR things
 better_backup/cache
 better_backup/metadata
+better_backup/export_backup
+better_backup/*.table
+better_backup/*.db
 config/
 server/
 logs/

@@ -3,16 +3,15 @@ import re
 from mcdreforged.api.all import *
 
 from better_backup.config import config
-from better_backup.constants import PREFIX, server_inst
+from better_backup.constants import OLD_METADATA_DIR, PREFIX, server_inst
+from better_backup.database import database
 from better_backup.operations import (confirm_restore, create_backup,
-                                      export_backup, init_folder, list_backups,
-                                      operation_lock, remove_backup,
-                                      reset_cache, restore_backup,
-                                      trigger_abort)
+                                      export_backup, init_structure,
+                                      list_backups, operation_lock,
+                                      remove_backup, reset_cache,
+                                      restore_backup, trigger_abort)
 from better_backup.timer import timer
 from better_backup.utils import *
-
-PREFIX = "!!bb"
 
 
 def print_unknown_argument_message(source: CommandSource, error: UnknownArgument):
@@ -99,12 +98,12 @@ def register_command(server: PluginServerInterface):
         .then(
             get_literal_node("restore")
             .runs(lambda src: restore_backup(src))
-            .then(Text("uuid").runs(lambda src, ctx: restore_backup(src, ctx["uuid"])))
+            .then(Text("uuid|index").runs(lambda src, ctx: restore_backup(src, ctx["uuid|index"])))
         )
         .then(
             get_literal_node("remove")
             .runs(lambda src: remove_backup(src))
-            .then(Text("uuid").runs(lambda src, ctx: remove_backup(src, ctx["uuid"])))
+            .then(Text("uuid|index").runs(lambda src, ctx: remove_backup(src, ctx["uuid|index"])))
         )
         .then(
             get_literal_node("list")
@@ -179,9 +178,11 @@ def on_load(server: PluginServerInterface, old):
         operation_lock
     ):
         operation_lock = old.operation_lock
+    if os.path.isdir(os.path.join(config.backup_data_path, OLD_METADATA_DIR)):
+        raise MetadataError(tr("metadata_conflict"))
     server.register_help_message(PREFIX, tr("help_title"))
 
-    init_folder(config.backup_data_path)
+    init_structure(config.backup_data_path)
     register_command(server)
     server.logger.info("Better Backup Loaded!")
 
@@ -192,4 +193,5 @@ def on_unload(server):
 
 def on_remove(server: PluginServerInterface):
     trigger_abort(server.get_plugin_command_source())
+    database.close()
     timer.stop()
