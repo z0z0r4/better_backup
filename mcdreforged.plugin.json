@@ -11,9 +11,6 @@
 		"alex3236"
 	],
 	"link": "https://github.com/z0z0r4/better_backup",
-	"dependencies": {
-		"mcdreforged": ">=2.1.2"
-	},
 
 	"archive_name": "Better_Backup-v{version}",
 	"resources": [
