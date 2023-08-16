@@ -2,8 +2,7 @@
 
 一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
 
-![image](https://github.com/z0z0r4/better_backup/assets/78744121/f6c7ea9a-07c2-43b5-8595-9e1b1d7e79ac)
-
+![image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
 
 ## 特性
 
