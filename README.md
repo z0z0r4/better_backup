@@ -56,6 +56,8 @@ mcd_root/
 
 `!!bb export [<uuid|index>] [plain|tar|tar_gz|tar_xz] [compress_level]` 导出备份数据
 
+`!!bb lock [<uuid|index>]` 锁定或解锁备份点，以设置是否被自动删除
+
 当 `<uuid|index>` 未设置或为 1 时为最新备份点的 uuid
 
 如 `2` 为由新到旧的第二个备份点，此处不考虑 `page`，需自行计算
