@@ -247,7 +247,7 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
             os.path.join(src_path, src_dir),
             os.path.join(temp_dir, src_dir),
             dirs_exist_ok=True,
-            ignore=ignore_files_and_folders, # copy all files including ignore files
+            ignore=ignore_files_and_folders,
         )
     # copy all then delete all
     for src_dir in src_dirs:

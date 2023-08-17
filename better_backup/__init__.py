@@ -179,7 +179,6 @@ def on_load(server: PluginServerInterface, old):
         operation_lock = old.operation_lock
     if os.path.isdir(os.path.join(config.backup_data_path, OLD_METADATA_DIR)):
         raise MetadataError(tr("metadata_conflict"))
-    os.makedirs(config.backup_data_path, exist_ok=True)
     server.register_help_message(PREFIX, tr("help_title"))
 
     init_structure(config.backup_data_path)
