@@ -101,11 +101,6 @@ class Backup:
     def from_row(cls, row):
         return Backup(row.uuid, row.time, row.size, row.message)
 
-    @classmethod
-    def from_database(cls, uuid):
-        pass
-        # TODO
-
 
 class MetadataError(SyntaxError):
     pass
@@ -290,7 +285,7 @@ def get_backup_row(uuid: str):
 
 
 def get_backups(filter=None, orderby=None):
-    return database(filter).select(database.backups.ALL, orderby=orderby)
+    return database(filter).select(database.backups.ALL, orderby=orderby) or []
 
 
 def get_files(filter=None, orderby=None):
@@ -365,19 +360,20 @@ def remove_backup_util(backup_uuid: str):
     for file in files:
         hash = file.hash
         file.delete_record()
-        if not get_files(database.files.hash == hash):  # remove file record if useless
+        if database(database.files.hash == hash).isempty():  # remove file record if useless
             path = get_cached_file(hash)
             zst_path = path + ZST_EXT
             if os.path.exists(zst_path):
                 os.remove(zst_path)
             elif os.path.exists(path):
                 os.remove(path)
-    get_backup_row(backup_uuid).delete_record()  # remove backup record
+    database.commit()
+    database(database.backups.uuid == backup_uuid).delete() # remove backup record
     database.commit()
 
 
 def auto_remove_util(limit: int) -> list:
-    all_backup_info = get_backups(orderby=database.backups.time) or []
+    all_backup_info = get_backups((database.backups.locked == False) | (database.backups.locked == None), orderby=database.backups.time)
     count = len(all_backup_info)
     removed_uuids = []
     if count > limit:

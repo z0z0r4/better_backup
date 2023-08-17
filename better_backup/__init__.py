@@ -7,10 +7,10 @@ from better_backup.constants import OLD_METADATA_DIR, PREFIX, server_inst
 from better_backup.database import database
 from better_backup.operations import (confirm_restore, create_backup,
                                       export_backup, init_structure,
-                                      list_backups, operation_lock,
-                                      remove_backup, reset_cache,
-                                      restore_backup, trigger_abort,
-                                      game_save_triggered)
+                                      list_backups, lock_backup,
+                                      operation_lock, remove_backup,
+                                      reset_cache, restore_backup,
+                                      trigger_abort, game_save_triggered)
 from better_backup.timer import timer
 from better_backup.utils import *
 
@@ -105,6 +105,11 @@ def register_command(server: PluginServerInterface):
             get_literal_node("remove")
             .runs(lambda src: remove_backup(src))
             .then(Text("uuid|index").runs(lambda src, ctx: remove_backup(src, ctx["uuid|index"])))
+        )
+        .then(
+            get_literal_node("lock")
+            .runs(lambda src: lock_backup(src))
+            .then(Text("uuid|index").runs(lambda src, ctx: lock_backup(src, ctx["uuid|index"])))
         )
         .then(
             get_literal_node("list")

@@ -15,6 +15,7 @@ better_backup:
     §7{0} reload§r 重新加载配置文件
     §7{0} reset§r 重置备份数据
     §7{0} export §6[<uuid|index>]§r §6[<format>]§r §6[<compress_level>]§r 导出备份数据
+    §7{0} lock §6[<uuid|index>]§r 锁定或解锁备份点
     当 §6<uuid|index>§r 未设置或为 §c1§r 时为最新备份点
     如 §c2§r 为由新到旧的第二个备份点，不考虑 §cpage§r，请自行计算
     §7{0} timer§r 显示定时器状态
@@ -37,18 +38,20 @@ better_backup:
     create: §a备份§r
     restore: §c回档§r
     confirm: 准备§c回档§r
+    lock: 锁定
     reset: §c重置r
     export: §a导出§r
 
   remove_backup:
+    start: 正在删除
     success: 删除备份点 §6{0}§r§a 完成§r
-    fail: "删除备份点 §6{0}§r§4失败§r: {1}"
+    fail: "删除备份点 §6{0}§r §4失败§r: {1}"
 
   create_backup:
     start: §a备份§r中...请稍等
     abort.plugin_unload: 插件重载，§a备份§r中断！
     abort.no_slot: 未找到可用备份点，§a备份§r中断！
-    success: §a备份§r §6{0}§r 完成，耗时§6{1}§r秒 {2}
+    success: §a备份§r §6{0}§r 完成，耗时 §6{1}§r 秒 {2}
     fail: "§a备份§r失败: {0}"
     zstd_not_found: '请安装 pyzstd 或关闭备份压缩功能：§6{0} -m pip install pyzstd§r'
   
@@ -58,13 +61,17 @@ better_backup:
 
   restore_backup:
     echo_action: 准备将存档恢复至备份点 §6{0}§r
-    confirm_hint: 使用§7{0} confirm§r 确认§c回档§r
+    confirm_hint: 使用 §7{0} confirm§r 确认§c回档§r
     confirm_hover: 点击确认
     abort_hint: §7{0} abort§r 取消
     abort_hover: 点击取消
     success: §c回档§r成功
-    fail: §a回档§r失败，错误代码{0}
+    fail: §a回档§r失败：{0}
     zstd_not_found: 'pip install pyzstd 以回档已压缩的备份'
+  
+  lock_backup:
+    locked: 已§c锁定§r备份 §6{0}§r
+    unlocked: 已§a解锁§r备份 §6{0}§r
 
   reset_backup:
     start: 准备重置备份数据
@@ -79,7 +86,7 @@ better_backup:
 
   do_restore:
     countdown.intro: 10秒后关闭服务器§c回档§r
-    countdown.text: 还有{0}秒，将§c回档§r为备份点 §6{1}§r
+    countdown.text: 还有 {0} 秒，将§c回档§r为备份点 §6{1}§r
     countdown.hover: 点击终止回档！
     abort: §c回档§r被中断！
 
@@ -87,13 +94,15 @@ better_backup:
 
   list_backup:
     title: §d[备份点信息]§r
-    total_space: "备份总占用空间: §a{0}§r"
     restore_hint: 回档至 {0}
     remove_hint: 删除备份 {0}
+    lock_hint: 锁定备份 {0}
+    unlock_hint: 解锁备份 {0}
     page:
       page_not_found: 不存在这一页
-      total_info: 共 {0} 个备份点
+      total_info: 共 {0} 个备份点，占用空间 §a{1}§r
       previous_page: 上一页
+      next_page: 下一页
 
   print_help:
     hotbar: §d【快捷操作】§r
@@ -107,13 +116,13 @@ better_backup:
       command: "{0} restore"
 
   unknown_command:
-    text: 参数错误！请输入§7{0}§r以获取插件信息
+    text: 参数错误！请输入 §7{0}§r 以获取插件信息
     hover: 点击查看帮助
   command:
     permission_denied: §c权限不足§r
 
   timer:
-    set_interval: "定时器触发间隔已设置为§6{0}§r分钟"
+    set_interval: "定时器触发间隔已设置为 §6{0}§r 分钟"
     reset_timer: 定时器已重置
     get_next_backup_message: "下次自动备份时间: §3{0}§r"
     on_backup_created: 检测到新增的备份，重置定时器
@@ -126,7 +135,7 @@ better_backup:
       stop: 关闭
 
     run:
-      trigger_time: "每§6{0}§r分钟一次的定时备份触发"
+      trigger_time: "每 §6{0}§r 分钟一次的定时备份触发"
       timed_backup: "{0} 定时备份"
 
     status:
