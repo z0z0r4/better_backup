@@ -37,6 +37,11 @@ def trigger_abort(source: CommandSource):
     print_message(source, "Operation terminated!", reply_source=True)
 
 
+def game_save_triggered():
+    global game_saved
+    game_saved = True
+
+
 def get_uuid(source: CommandSource, keyword: str = None):
     if keyword is None:  # get latest one
         uuid = get_backups(orderby=~database.backups.time)[0].uuid

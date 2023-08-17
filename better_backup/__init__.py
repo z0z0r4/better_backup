@@ -9,7 +9,8 @@ from better_backup.operations import (confirm_restore, create_backup,
                                       export_backup, init_structure,
                                       list_backups, operation_lock,
                                       remove_backup, reset_cache,
-                                      restore_backup, trigger_abort)
+                                      restore_backup, trigger_abort,
+                                      game_save_triggered)
 from better_backup.timer import timer
 from better_backup.utils import *
 
@@ -168,9 +169,7 @@ def register_command(server: PluginServerInterface):
 def on_info(server: PluginServerInterface, info: Info):
     if not info.is_user:
         if info.content in config.saved_output:
-            global game_saved
-            game_saved = True
-
+            game_save_triggered()
 
 def on_load(server: PluginServerInterface, old):
     global operation_lock
