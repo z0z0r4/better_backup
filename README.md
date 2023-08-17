@@ -2,8 +2,9 @@
 
 一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
 
-![image](https://github.com/z0z0r4/better_backup/assets/78744121/f6c7ea9a-07c2-43b5-8595-9e1b1d7e79ac)
+![image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
 
+⚠️ v2.0.0 起使用 SQlite 不兼容 v1.x 的 JSON 备份数据，请自行提前 [转换](https://github.com/z0z0r4/better_backup/issues/12) 或清除 `better_backup` 文件夹内旧数据
 
 ## 特性
 
@@ -21,9 +22,9 @@
 mcd_root/
     better_backup/
         cache/ # 备份文件
-            ...
-
-        metadata/ # 元数据
+            00/
+            0a/
+            0b/
             ...
 
         export_backup/ # 导出
@@ -31,6 +32,8 @@ mcd_root/
 
         overwrite/ # 留底
             ...
+        
+        storage.db # 数据库
 ```
 
 ## 命令格式说明
@@ -131,7 +134,7 @@ mcd_root/
 - [ ] 支持锁定指定备份不被自动删除
 - [ ] 支持修改备份点注释
 - [ ] 文件链接处理
-- [ ] SQlite 支持
+- [x] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
 - [ ] 导出支持 `.tar.zst`

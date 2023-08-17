@@ -1,4 +1,5 @@
 better_backup:
+  metadata_conflict: 当前版本不兼容旧版元数据。请在旧版做好备份后重置备份数据。
   help_title: 查看 Better Backup 用法
   help_message: |
     ------ {1} v{2} ------
@@ -27,6 +28,7 @@ better_backup:
   hour: "{0}小时"
   day: "{0}天"
   empty_comment: §7空§r
+  no_one_backup: 没有备份
   unknown_backup: 未找到相应备份点
 
   lock.warning: 正在{0}中，请等待操作执行完成
@@ -40,14 +42,14 @@ better_backup:
 
   remove_backup:
     success: 删除备份点 §6{0}§r§a 完成§r
-    fail: "删除备份点 §6{0}§r§4失败§r，错误代码: {1}"
+    fail: "删除备份点 §6{0}§r§4失败§r: {1}"
 
   create_backup:
     start: §a备份§r中...请稍等
     abort.plugin_unload: 插件重载，§a备份§r中断！
     abort.no_slot: 未找到可用备份点，§a备份§r中断！
     success: §a备份§r §6{0}§r 完成，耗时§6{1}§r秒 {2}
-    fail: §a备份§r失败，错误代码{0}
+    fail: "§a备份§r失败: {0}"
     zstd_not_found: '请安装 pyzstd 或关闭备份压缩功能：§6{0} -m pip install pyzstd§r'
   
   auto_remove:
@@ -62,7 +64,7 @@ better_backup:
     abort_hover: 点击取消
     success: §c回档§r成功
     fail: §a回档§r失败，错误代码{0}
-    zstd_not_found: '请安装 pyzstd 以回档已压缩的备份：§6{0} -m pip install pyzstd§r'
+    zstd_not_found: 'pip install pyzstd 以回档已压缩的备份'
 
   reset_backup:
     start: 准备重置备份数据
@@ -71,6 +73,7 @@ better_backup:
   export_backup:
     start: 正在导出备份数据
     success: §a导出§r成功，位于 {0}
+    zstd_not_found: 'pip install pyzstd 或使用其他导出格式'
 
   confirm_restore.nothing_to_confirm: 没有什么需要确认的
 
