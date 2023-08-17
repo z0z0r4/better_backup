@@ -4,6 +4,8 @@
 
 ![image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
 
+⚠️ v2.0.0 起使用 SQlite 不兼容 v1.x 的 JSON 备份数据，请自行提前 [转换](https://github.com/z0z0r4/better_backup/issues/12) 或清除 `better_backup` 文件夹内旧数据
+
 ## 特性
 
 - 避免重复文件，比 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) 节省 20% ~ 90% 备份空间  
