@@ -230,6 +230,15 @@ def get_dir_size(dir_path: str) -> int:
                     for name in files])
     return size
 
+def ignore_files_and_folders(src: str, names: list) -> list:
+    ignore_names = []
+    for name in names:
+        if (
+            name in (config.ignored_files or config.ignored_folders)
+            and os.path.splitext(name)[1] in config.ignored_extensions
+        ):
+            ignore_names.append(name)
+    return ignore_names
 
 def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = None):
     os.makedirs(temp_dir, exist_ok=True)
@@ -238,7 +247,7 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
             os.path.join(src_path, src_dir),
             os.path.join(temp_dir, src_dir),
             dirs_exist_ok=True,
-            # ignore=ignore_files_and_folders, # copy all files including ignored files
+            ignore=ignore_files_and_folders, # copy all files including ignore files
         )
     # copy all then delete all
     for src_dir in src_dirs:
@@ -251,16 +260,6 @@ def restore_temp(
     temp_dir: str = TEMP_DIR,
     config: Configuration = None,
 ):
-    def ignore_files_and_folders(src: str, names: list) -> list:
-        ignore_names = []
-        for name in names:
-            if (
-                name in (config.ignored_files or config.ignored_folders)
-                and os.path.splitext(name)[1] in config.ignored_extensions
-            ):
-                ignore_names.append(name)
-        return ignore_names
-
     src_path = config.server_path
     for src_dir in src_dirs:
         os.removedirs(os.path.join(src_path, src_dir))
@@ -307,24 +306,24 @@ def create_backup_util(
 ) -> dict:
     create_time = time.time()
     backup_uuid = uuid.uuid4().hex[:6]  # 6 位 UUID 不可能撞吧...
-    # total_files_info = {}
     total_size = 0
     for src_dir in src_dirs:
         dir_path = os.path.join(src_path, src_dir)
         for root, _, files in os.walk(dir_path):
             for filename in files:
-                path = os.path.relpath(root, src_path)
-                file = os.path.join(root, filename)
-                size, hash = cache_file(file)
-                total_size += size
-                database.files.insert(
-                    backup_uuid=backup_uuid,
-                    name=filename,
-                    path=path,
-                    hash=hash,
-                    hash_type="md5"
-                )
-                database.commit()
+                if not (filename in config.ignored_files or os.path.splitext(filename)[1] in config.ignored_extensions or os.path.split(root)[1] in config.ignored_folders):
+                    path = os.path.relpath(root, src_path)
+                    file = os.path.join(root, filename)
+                    size, hash = cache_file(file)
+                    total_size += size
+                    database.files.insert(
+                        backup_uuid=backup_uuid,
+                        name=filename,
+                        path=path,
+                        hash=hash,
+                        hash_type="md5"
+                    )
+    database.commit()
 
     backup_info = Backup.insert_new(
         backup_uuid, create_time, total_size, message)

@@ -192,7 +192,7 @@ def confirm_restore(source: CommandSource):
                 "{} abort".format(PREFIX),
             ),
         )
-        for _ in range(3):
+        for _ in range(10):
             time.sleep(0.1)
             if restore_aborted:
                 print_message(source, tr("do_restore.abort"))

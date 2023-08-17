@@ -1,4 +1,5 @@
 from pydal import DAL, Field
+import os
 from better_backup.config import config
 
 database: DAL = None
@@ -6,6 +7,7 @@ database: DAL = None
 
 def load_database():
     global database
+    os.makedirs(config.backup_data_path, exist_ok=True)
     database = DAL("sqlite://storage.db", folder=config.backup_data_path)
     
     if "files" not in database.tables:
