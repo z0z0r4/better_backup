@@ -15,6 +15,7 @@ better_backup:
     §7{0} reload§r 重新加载配置文件
     §7{0} reset§r 重置备份数据
     §7{0} export §6[<uuid|index>]§r §6[<format>]§r §6[<compress_level>]§r 导出备份数据
+    §7{0} lock §6[<uuid|index>]§r 锁定或解锁备份点
     当 §6<uuid|index>§r 未设置或为 §c1§r 时为最新备份点
     如 §c2§r 为由新到旧的第二个备份点，不考虑 §cpage§r，请自行计算
     §7{0} timer§r 显示定时器状态
