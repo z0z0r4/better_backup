@@ -103,7 +103,7 @@ def register_command(server: PluginServerInterface):
         )
         .then(
             get_literal_node("remove")
-            .runs(lambda src: auto_remove_util(5))
+            .runs(lambda src: remove_backup(src))
             .then(Text("uuid|index").runs(lambda src, ctx: remove_backup(src, ctx["uuid|index"])))
         )
         .then(
