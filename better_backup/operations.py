@@ -101,9 +101,9 @@ def do_create(source: CommandSource, message: Optional[str] = None):
                 ),
             ),
         )
+        timer.on_backup_created(backup_uuid=backup_info.uuid)
 
         # remove oldest backup if reached max count
-        timer.on_backup_created(backup_uuid=backup_info.uuid)
         if config.auto_remove:
             removed_uuids = auto_remove_util(
                 limit=config.backup_count_limit,
@@ -126,13 +126,14 @@ def do_create(source: CommandSource, message: Optional[str] = None):
 @new_thread(thread_name("remove_backup"))
 @single_op(tr("operations.remove"))
 def remove_backup(
-    source: CommandSource, kw: Optional[str] = None, index: Optional[int] = None
+    source: CommandSource, kw: Optional[str] = None
 ):
     uuid_result = get_uuid(source, kw)
     if uuid_result is None:
         print_message(source, tr("unknown_backup"))
         return
 
+    print_message(source, tr("remove_backup.start"))
     remove_backup_util(backup_uuid=uuid_result)
     print_message(source, tr("remove_backup.success", uuid_result))
 
@@ -249,76 +250,83 @@ def do_restore(source: CommandSource):
         selected_uuid = None
 
 
-def list_backups(source: CommandSource, page_num: int = 1):
-    all_backup_info = get_backups(orderby=~database.backups.time) or []
-    if len(all_backup_info) == 0:
-        text = RTextList(tr("no_one_backup") + "\n")
-        header_text = tr("list_backup.title") + "\n"
-    elif LIST_PAGE_SIZE * (page_num - 1) >= len(all_backup_info) or page_num <= 0:
-        print_message(source, tr(
-            "list_backup.page.page_not_found"), reply_source=True)
+@single_op(tr("operations.lock"))
+def lock_backup(source: CommandSource, kw: str):
+    selected_uuid = get_uuid(source, kw)
+    if selected_uuid is None:
         return
+    backup = get_backup_row(selected_uuid)
+    
+    if backup.locked:
+        backup.update_record(locked = False)
+        print_message(source, tr("lock_backup.unlocked", selected_uuid))
     else:
-        text = RTextList()
-        header_text = tr("list_backup.title") + "\n"
+        backup.update_record(locked = True)
+        print_message(source, tr("lock_backup.locked", selected_uuid))
+
+
+def list_backups(source: CommandSource, page_num: int = 1):
+    all_backup_info = get_backups(orderby=~database.backups.time)
+    if LIST_PAGE_SIZE * (page_num - 1) >= len(all_backup_info) or page_num <= 0:
+        print_message(source, tr(
+            "list_backup.page.page_not_found"), reply_source=True, prefix="")
+        return
+    print_message(source, tr("list_backup.title"), reply_source=True, prefix="")
+    if len(all_backup_info) == 0:
+        print_message(source, tr("no_one_backup"), reply_source=True, prefix="")
+    else:
         for _i in range(((page_num - 1) * LIST_PAGE_SIZE), page_num * LIST_PAGE_SIZE):
             if _i <= (len(all_backup_info) - 1):
                 backup_info = all_backup_info[_i]
-                text += RTextList(
-                    RText(
-                        f'[§e{str((_i+1)).zfill(len(str(LIST_PAGE_SIZE)))}§r] [§e{backup_info.uuid}§r] '
-                    ),
-                    RText("[▷] ", color=RColor.green)
-                    .h(tr("list_backup.restore_hint", backup_info.uuid))
-                    .c(
-                        RAction.suggest_command,
-                        f'{PREFIX} restore {backup_info.uuid}',
-                    ),
-                    RText("[x] ", color=RColor.green)
-                    .h(tr("list_backup.remove_hint", backup_info.uuid))
-                    .c(
-                        RAction.suggest_command,
-                        f'{PREFIX} remove {backup_info.uuid}',
-                    ),
-                    RText(
-                        f'{time.strftime(r"%Y-%m-%d %H:%M:%S", time.localtime(backup_info.time))}  §l*§r {format_dir_size(backup_info.size).ljust(10)} §l*§r '
-                        + tr("empty_comment") if backup_info.message is None else backup_info.message
+                uuid_info = RText(
+                    f'[§e{str((_i+1)).zfill(len(str(LIST_PAGE_SIZE)))}§r] [§e{backup_info.uuid}§r] '
                     )
-                    + "\n",
+                action_bar = RTextList(
+                    "[",
+                    RText("⊄ ", color=RColor.red) if backup_info.locked else RText("⊂ ", color=RColor.green)
+                        .h(tr("list_backup.unlock_hint" if backup_info.locked else "list_backup.lock_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
+                    RText("▷ ", color=RColor.green)
+                        .h(tr("list_backup.restore_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
+                    RText("⨯", color=RColor.green)
+                        .h(tr("list_backup.remove_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} remove {backup_info.uuid}'), 
+                    "] "
                 )
+                detail = RText(
+                    f'{time.strftime(r"%y-%m-%d %H:%M", time.localtime(backup_info.time))} §l*§r {format_dir_size(backup_info.size).ljust(10)}§l*§r '
+                    + tr("empty_comment") if backup_info.message is None else backup_info.message + "\n"
+                )
+                print_message(source, 
+                              RTextList(uuid_info, action_bar, detail) if source.is_player
+                              else RTextList(uuid_info, action_bar, detail),
+                              prefix="", reply_source=True
+                            )
             else:
                 break
-        page_info = RTextList(
+        footer = RTextList(
             RText("[<<] ", color=RColor.green)
             .h(tr("list_backup.previous_page.hits"))
             .c(
                 RAction.run_command,
                 f"{PREFIX} list {page_num-1}",
             ),
-            RText(f" {page_num}/{ceil(len(all_backup_info) / LIST_PAGE_SIZE)} "),
-            RText("[>>] ", color=RColor.green)
-            .h(tr("list_backup.previous_page.hits"))
+            RText(f"{page_num}/{ceil(len(all_backup_info) / LIST_PAGE_SIZE)}"),
+            RText(" [>>]", color=RColor.green)
+            .h(tr("list_backup.next_page.hits"))
             .c(
                 RAction.run_command,
                 f"{PREFIX} list {page_num+1}",
             ),
             "\n",
+            RText(tr("list_backup.page.total_info", 
+                        len(all_backup_info), 
+                        format_dir_size(get_dir_size(os.path.join(config.backup_data_path, CACHE_DIR)))
+                    )
+                )
         )
-        text += page_info
-        text += RText(tr("list_backup.page.total_info", len(all_backup_info)))
-        text += " §l*§r "
-
-    total_space_text = RText(
-        tr(
-            "list_backup.total_space",
-            format_dir_size(
-                get_dir_size(os.path.join(config.backup_data_path, CACHE_DIR))
-            ),
-        ),
-    )
-    print_message(
-        source, header_text + text + total_space_text, prefix="", reply_source=True
-    )
+        print_message(source, footer, prefix="", reply_source=True)
 
 
 @new_thread(thread_name("reset_cache"))

@@ -38,10 +38,12 @@ better_backup:
     create: §aBacking up§r
     confirm: Waiting for §crestore§r
     restore: §cRestoring§r
+    lock: Locking
     reset: §cResetingr
     export: §aExporting§r
 
   remove_backup:
+    start: Removing
     success: Backup §6{0}§r delete §asuccess§r
     fail: "Backup §6{0}§r delete §4failed§r: {1}"
 
@@ -62,6 +64,10 @@ better_backup:
     success: §cRestore§r successfully
     fail: §cRestore§r unsuccessfully, error code {0}
     zstd_not_found: 'pip install pyzstd to restore compressed backup'
+
+  lock_backup:
+    locked: §cLocked§r §6{0}§r
+    unlocked: §aUnlocked§r §6{0}§r
 
   reset_backup:
     start: Gonna reset the backup data
@@ -90,10 +96,13 @@ better_backup:
     title: §d[Backup Information]§r
     restore_hint: Restore to backup {0}
     remove_hint: Remove backup {0}
-    total_space: "Total space consumed: §a{0}§r"
+    lock_hint: Unlock {0}
+    unlock_hint: Lock {0}
     page:
       page_not_found: Page Not Found
-      total_info: Total {0} backups
+      total_info: Total {0} backups, {1} consumed
+      previous_page: Previous page
+      next_page: Next page
   print_help:
     hotbar: §d[Hotbar]§r
     click_to_create:
