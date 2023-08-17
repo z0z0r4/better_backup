@@ -108,6 +108,7 @@ def register_command(server: PluginServerInterface):
         )
         .then(
             get_literal_node("lock")
+            .runs(lambda src: lock_backup(src))
             .then(Text("uuid|index").runs(lambda src, ctx: lock_backup(src, ctx["uuid|index"])))
         )
         .then(
