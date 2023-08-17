@@ -251,7 +251,7 @@ def do_restore(source: CommandSource):
 
 
 @single_op(tr("operations.lock"))
-def lock_backup(source: CommandSource, kw: str):
+def lock_backup(source: CommandSource, kw: Optional[str] = None):
     selected_uuid = get_uuid(source, kw)
     if selected_uuid is None:
         return
