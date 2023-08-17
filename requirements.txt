@@ -1,2 +1,2 @@
 mcdreforged>=2.1.2
-pydal
+pydal~=20230521.1

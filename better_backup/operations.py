@@ -60,7 +60,7 @@ def get_uuid(source: CommandSource, keyword: str = None):
     return uuid
 
 
-@new_thread(thread_name("help"))
+@new_thread(thread_name("create_backup"))
 def create_backup(source: CommandSource, message: Optional[str] = None):
     do_create(source, message)
 
