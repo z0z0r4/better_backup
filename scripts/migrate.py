@@ -100,4 +100,5 @@ if __name__ == "__main__":
         print(f'已迁移 {backup_info["backup_uuid"]}')
     database.commit()
     rmtree(os.path.join(BACKUP_DATA_PATH, "metadata"))
+    print(f"已完成，请更新至 v2.x，v1.x 不再兼容")
     # print(f"已完成，请在备份后手动删除 {BACKUP_DATA_PATH}/metadata 文件夹")
