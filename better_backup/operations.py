@@ -307,14 +307,14 @@ def list_backups(source: CommandSource, page_num: int = 1):
                 break
         footer = RTextList(
             RText("[<<] ", color=RColor.green)
-            .h(tr("list_backup.previous_page.hits"))
+            .h(tr("list_backup.page.previous_page"))
             .c(
                 RAction.run_command,
                 f"{PREFIX} list {page_num-1}",
             ),
             RText(f"{page_num}/{ceil(len(all_backup_info) / LIST_PAGE_SIZE)}"),
             RText(" [>>]", color=RColor.green)
-            .h(tr("list_backup.next_page.hits"))
+            .h(tr("list_backup.page.next_page"))
             .c(
                 RAction.run_command,
                 f"{PREFIX} list {page_num+1}",

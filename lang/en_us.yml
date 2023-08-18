@@ -104,6 +104,7 @@ better_backup:
       total_info: Total {0} backups, {1} consumed
       previous_page: Previous page
       next_page: Next page
+
   print_help:
     hotbar: §d[Hotbar]§r
     click_to_create:
