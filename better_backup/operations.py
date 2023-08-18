@@ -85,7 +85,6 @@ def do_create(source: CommandSource, message: Optional[str] = None):
     try:
         backup_info = create_backup_util(
             *config.world_names,
-            cache_dir=os.path.join(config.backup_data_path, CACHE_DIR),
             message=message,
             src_path=config.server_path,
             config=config,
