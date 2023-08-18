@@ -294,7 +294,6 @@ def get_files(filter=None, orderby=None):
 
 def create_backup_util(
     *src_dirs: str,
-    cache_dir: str = CACHE_DIR,
     message: Optional[str] = None,
     src_path: str = None,
     config: Configuration = None,

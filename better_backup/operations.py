@@ -300,7 +300,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
                 )
                 print_message(source, 
                               RTextList(uuid_info, action_bar, detail) if source.is_player
-                              else RTextList(uuid_info, action_bar, detail),
+                              else RTextList(uuid_info, detail),
                               prefix="", reply_source=True
                             )
             else:
