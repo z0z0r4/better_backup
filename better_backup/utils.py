@@ -377,7 +377,7 @@ def auto_remove_util(limit: int) -> list:
     count = len(all_backup_info)
     removed_uuids = []
     if count > limit:
-        for backup_info in all_backup_info[limit:]:
+        for backup_info in all_backup_info[:limit]:
             remove_backup_util(backup_info.uuid)
             removed_uuids.append(backup_info.uuid)
     return removed_uuids
