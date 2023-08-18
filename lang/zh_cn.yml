@@ -53,7 +53,7 @@ better_backup:
     abort.no_slot: 未找到可用备份点，§a备份§r中断！
     success: §a备份§r §6{0}§r 完成，耗时 §6{1}§r 秒 {2}
     fail: "§a备份§r失败: {0}"
-    zstd_not_found: '请安装 pyzstd 或关闭备份压缩功能：§6{0} -m pip install pyzstd§r'
+    # zstd_not_found: '请安装 pyzstd 或关闭备份压缩功能：§6{0} -m pip install pyzstd§r'
   
   auto_remove:
     removed: 已自动删除备份点 §e{0}§r
@@ -67,7 +67,7 @@ better_backup:
     abort_hover: 点击取消
     success: §c回档§r成功
     fail: §a回档§r失败：{0}
-    zstd_not_found: 'pip install pyzstd 以回档已压缩的备份'
+    # zstd_not_found: 'pip install pyzstd 以回档已压缩的备份'
   
   lock_backup:
     locked: 已§c锁定§r备份 §6{0}§r
@@ -80,7 +80,7 @@ better_backup:
   export_backup:
     start: 正在导出备份数据
     success: §a导出§r成功，位于 {0}
-    zstd_not_found: 'pip install pyzstd 或使用其他导出格式'
+    # zstd_not_found: 'pip install pyzstd 或使用其他导出格式'
 
   confirm_restore.nothing_to_confirm: 没有什么需要确认的
 

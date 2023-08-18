@@ -4,14 +4,18 @@
 
 ![image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
 
-⚠️ v2.0.0 起使用 SQlite 不兼容 v1.x 的 JSON 备份数据，请自行提前 [转换](https://github.com/z0z0r4/better_backup/issues/12) 或清除 `better_backup` 文件夹内旧数据
+> ⚠️ **警告：**  
+> v2.0.0 起使用 SQlite 不兼容以前版本的 JSON 备份数据  
+> v2.1.0 起使用 xxHash 不兼容以前版本的哈希数据  
+> **请在旧版本提前导出并清除 `better_backup` 文件夹内所有数据**
 
 ## 特性
 
 - 避免重复文件，比 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) 节省 20% ~ 90% 备份空间  
   对于大存档和读写性能低下的硬盘，速度显著优于 [QuickBackupM](https://github.com/TISUnion/QuickBackupM) ([基准测试](https://github.com/z0z0r4/better_backup/issues/5))
 - 内置定时备份
-- 支持 zstd 压缩，每个文件节省 50% 以上空间，且不影响回档速度
+- 支持 zstd 压缩，额外节省 50% 以上备份空间，且不影响回档速度
+- xxHash 计算哈希值，节省 20% ~ 70% 运算时间
 - 支持自动删除过旧备份，保留指定数量的备份
 - 轻松导出完整备份
 
@@ -23,6 +27,7 @@ mcd_root/
     better_backup/
         cache/ # 备份文件
             00/
+                ...
             0a/
             0b/
             ...
@@ -134,16 +139,16 @@ mcd_root/
 以下 TODO 优先级从高到低 ~~，可遇见的是不会实现~~
 
 - [x] 支持锁定指定备份不被自动删除
-- [ ] 支持修改备份点注释
 - [ ] 文件链接处理
 - [x] SQlite 支持
 - [ ] 备份点还原文件 stat
 - [ ] 支持正则忽略文件/目录
-- [ ] 导出支持 `.tar.zst`
-- [ ] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
+- [x] 导出支持 `.tar.zst`
+- [x] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
 
 ## Wontdo
 
 - [ ] ~~云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘~~
 - [ ] ~~多盘备份，将备份同步保存到多个路径~~
 - [ ] ~~支持 Diff 备份数据库~~
+- [ ] ~~支持修改备份点注释~~

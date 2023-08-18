@@ -1,7 +1,7 @@
 import pyzstd
 import functools
-import hashlib
-import importlib
+# import hashlib
+import xxhash
 import os
 import tarfile
 import time
@@ -53,10 +53,10 @@ class ExportFormat(Enum):
 
 class ZstdTarFile(tarfile.TarFile):
     def __init__(self, name, mode='r', *, compresslevel=None, zstd_dict=None, **kwargs):
-        if pyzstd is None:
-            raise ModuleNotFoundError(
-                tr("export_backup.zstd_not_found")
-            )
+        # if pyzstd is None:
+        #     raise ModuleNotFoundError(
+        #         tr("export_backup.zstd_not_found")
+        #     )
         self.zstd_file = pyzstd.ZstdFile(name, mode,
                                          level_or_option=compresslevel,
                                          zstd_dict=zstd_dict)
@@ -174,22 +174,23 @@ def format_dir_size(size: int) -> str:
         return "{} GB".format(round(size / 2**30, 2))
 
 
-def get_stream_md5(obj, range_size: int = 131072) -> str:
+def get_stream_hash(obj, range_size: int = 1024 * 128) -> str:
     """通过文件对象获取文件的md5值"""
-    md5 = hashlib.md5()
+    # hash = hashlib.md5()
+    hash = xxhash.xxh3_64()
     while True:
         data = obj.read(range_size)
         if not data:
             break
-        md5.update(data)
-    return md5.hexdigest()
+        hash.update(data)
+    return hash.hexdigest()
 
 
 def cache_file(src_file: str):
     """获取文件的md5值，并将文件复制到缓存文件夹中"""
     # os.makedirs(os.path.split(src_file)[0], exist_ok=True)
     with open(src_file, "rb") as fsrc:
-        hash = get_stream_md5(fsrc)
+        hash = get_stream_hash(fsrc)
         dst_file = get_cached_file(hash)
         zst_dst_file = dst_file + ZST_EXT
         fsrc.seek(0, 0)
@@ -199,10 +200,10 @@ def cache_file(src_file: str):
             size = os.path.getsize(dst_file)
         else:
             if config.backup_compress_level:
-                if pyzstd is None:  # just raise
-                    raise ModuleNotFoundError(
-                        tr("create_backup.zstd_not_found")
-                    )
+                # if pyzstd is None:  # just raise
+                #     raise ModuleNotFoundError(
+                #         tr("create_backup.zstd_not_found")
+                #     )
                 with open(zst_dst_file, "wb") as fdst:
                     pyzstd.compress_stream(
                         fsrc, fdst, level_or_option=config.backup_compress_level
@@ -315,7 +316,7 @@ def create_backup_util(
                         name=filename,
                         path=path,
                         hash=hash,
-                        hash_type="md5"
+                        # hash_type="md5"
                     )
     database.commit()
 
@@ -341,10 +342,10 @@ def restore_backup_util(
         dst_file = os.path.join(fin_dst_dir, file.name)
 
         if os.path.exists(zst_src):  # Try .zst first
-            if pyzstd is None:
-                raise ModuleNotFoundError(
-                    str(tr("restore_backup.zstd_not_found"))
-                )
+            # if pyzstd is None:
+            #     raise ModuleNotFoundError(
+            #         str(tr("restore_backup.zstd_not_found"))
+            #     )
             with open(zst_src, "rb") as fsrc:
                 with open(dst_file, "wb") as fdst:
                     pyzstd.decompress_stream(fsrc, fdst)

@@ -182,7 +182,10 @@ def on_load(server: PluginServerInterface, old):
         operation_lock
     ):
         operation_lock = old.operation_lock
-    if os.path.isdir(os.path.join(config.backup_data_path, OLD_METADATA_DIR)):
+    if (
+        os.path.isdir(os.path.join(config.backup_data_path, OLD_METADATA_DIR))
+        or not database(database.files.hash_type=="md5").isempty()
+    ):
         raise MetadataError(tr("metadata_conflict"))
     server.register_help_message(PREFIX, tr("help_title"))
 
