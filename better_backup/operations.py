@@ -296,7 +296,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
                 )
                 detail = RText(
                     f'{time.strftime(r"%y-%m-%d %H:%M", time.localtime(backup_info.time))} §l*§r {format_dir_size(backup_info.size).ljust(10)}§l*§r '
-                    + tr("empty_comment") if backup_info.message is None else backup_info.message + "\n"
+                    + (tr("empty_comment") if backup_info.message is None else backup_info.message) + "\n"
                 )
                 print_message(source, 
                               RTextList(uuid_info, action_bar, detail) if source.is_player
