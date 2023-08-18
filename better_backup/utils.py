@@ -17,11 +17,11 @@ from better_backup.config import Configuration, config
 from better_backup.constants import CACHE_DIR, PLUGIN_ID, TEMP_DIR, ZST_EXT
 from better_backup.database import database
 
-pyzstd = None
-try:
-    pyzstd = importlib.import_module("pyzstd")
-except ModuleNotFoundError as e:
-    pass
+# pyzstd = None
+# try:
+#     pyzstd = importlib.import_module("pyzstd")
+# except ModuleNotFoundError as e:
+#     pass
 
 
 operation_lock = Lock()
