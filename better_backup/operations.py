@@ -266,66 +266,66 @@ def lock_backup(source: CommandSource, kw: Optional[str] = None):
 
 def list_backups(source: CommandSource, page_num: int = 1):
     all_backup_info = get_backups(orderby=~database.backups.time)
-    if len(all_backup_info) == 0:
+    if len(all_backup_info) == 0: # empty
         print_message(source, tr("no_one_backup"), reply_source=True, prefix="")
-        return
-    if LIST_PAGE_SIZE * (page_num - 1) >= len(all_backup_info) or page_num <= 0:
+    print_message(source, tr("list_backup.title"), reply_source=True, prefix="")
+    if LIST_PAGE_SIZE * (page_num - 1) >= len(all_backup_info) or page_num <= 0: # page not found
         print_message(source, tr(
             "list_backup.page.page_not_found"), reply_source=True, prefix="")
         return
-    print_message(source, tr("list_backup.title"), reply_source=True, prefix="")
-    for _i in range(((page_num - 1) * LIST_PAGE_SIZE), page_num * LIST_PAGE_SIZE):
-        if _i <= (len(all_backup_info) - 1):
-            backup_info = all_backup_info[_i]
-            uuid_info = RText(
-                f'[§e{str((_i+1)).zfill(len(str(LIST_PAGE_SIZE)))}§r] [§e{backup_info.uuid}§r] '
+    else: # output
+        for _i in range(((page_num - 1) * LIST_PAGE_SIZE), page_num * LIST_PAGE_SIZE):
+            if _i <= (len(all_backup_info) - 1):
+                backup_info = all_backup_info[_i]
+                uuid_info = RText(
+                    f'[§e{str((_i+1)).zfill(len(str(LIST_PAGE_SIZE)))}§r] [§e{backup_info.uuid}§r] '
+                    )
+                action_bar = RTextList(
+                    "[",
+                    RText("⊄ ", color=RColor.red) if backup_info.locked else RText("⊂ ", color=RColor.green)
+                        .h(tr("list_backup.unlock_hint" if backup_info.locked else "list_backup.lock_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
+                    RText("▷ ", color=RColor.green)
+                        .h(tr("list_backup.restore_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
+                    RText("⨯", color=RColor.green)
+                        .h(tr("list_backup.remove_hint", backup_info.uuid))
+                        .c(RAction.suggest_command, f'{PREFIX} remove {backup_info.uuid}'), 
+                    "] "
                 )
-            action_bar = RTextList(
-                "[",
-                RText("⊄ ", color=RColor.red) if backup_info.locked else RText("⊂ ", color=RColor.green)
-                    .h(tr("list_backup.unlock_hint" if backup_info.locked else "list_backup.lock_hint", backup_info.uuid))
-                    .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
-                RText("▷ ", color=RColor.green)
-                    .h(tr("list_backup.restore_hint", backup_info.uuid))
-                    .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
-                RText("⨯", color=RColor.green)
-                    .h(tr("list_backup.remove_hint", backup_info.uuid))
-                    .c(RAction.suggest_command, f'{PREFIX} remove {backup_info.uuid}'), 
-                "] "
-            )
-            detail = RText(
-                f'{time.strftime(r"%y-%m-%d %H:%M", time.localtime(backup_info.time))} §l*§r {format_dir_size(backup_info.size).ljust(10)}§l*§r '
-                + (tr("empty_comment") if backup_info.message is None else backup_info.message) + "\n"
-            )
-            print_message(source, 
-                            RTextList(uuid_info, action_bar, detail) if source.is_player
-                            else RTextList(uuid_info, detail),
-                            prefix="", reply_source=True
-                        )
-        else:
-            break
-    footer = RTextList(
-        RText("[<<] ", color=RColor.green)
-        .h(tr("list_backup.page.previous_page"))
-        .c(
-            RAction.run_command,
-            f"{PREFIX} list {page_num-1}",
-        ),
-        RText(f"{page_num}/{ceil(len(all_backup_info) / LIST_PAGE_SIZE)}"),
-        RText(" [>>]", color=RColor.green)
-        .h(tr("list_backup.page.next_page"))
-        .c(
-            RAction.run_command,
-            f"{PREFIX} list {page_num+1}",
-        ),
-        "\n",
-        RText(tr("list_backup.page.total_info", 
-                    len(all_backup_info), 
-                    format_dir_size(get_dir_size(os.path.join(config.backup_data_path, CACHE_DIR)))
+                detail = RText(
+                    f'{time.strftime(r"%y-%m-%d %H:%M", time.localtime(backup_info.time))} §l*§r {format_dir_size(backup_info.size).ljust(10)}§l*§r '
+                    + (tr("empty_comment") if backup_info.message is None else backup_info.message)
                 )
-            )
-    )
-    print_message(source, footer, prefix="", reply_source=True)
+                print_message(source, 
+                              RTextList(uuid_info, action_bar, detail) if source.is_player
+                              else RTextList(uuid_info, detail),
+                              prefix="", reply_source=True
+                            )
+            else:
+                break
+        footer = RTextList(
+            RText("[<<] ", color=RColor.green)
+            .h(tr("list_backup.page.previous_page"))
+            .c(
+                RAction.run_command,
+                f"{PREFIX} list {page_num-1}",
+            ),
+            RText(f"{page_num}/{ceil(len(all_backup_info) / LIST_PAGE_SIZE)}"),
+            RText(" [>>]", color=RColor.green)
+            .h(tr("list_backup.page.next_page"))
+            .c(
+                RAction.run_command,
+                f"{PREFIX} list {page_num+1}",
+            ),
+            "\n",
+            RText(tr("list_backup.page.total_info", 
+                        len(all_backup_info), 
+                        format_dir_size(get_dir_size(os.path.join(config.backup_data_path, CACHE_DIR)))
+                    )
+                )
+        )
+        print_message(source, footer, prefix="", reply_source=True)
 
 
 @new_thread(thread_name("reset_cache"))
