@@ -19,12 +19,12 @@ database: DAL = None
 ZST_EXT = ".zst"
 BACKUP_DATA_PATH = "D:/projects/mcdr/better_backup"
 
-# input(f"""
-# 用于跨版本迁移数据，强烈建议清除数据而非迁移，不保证成功\n
-# 如非默认，请将 better_backup 数据所在写入 BACKUP_DATA_PATH\n
-# 并将此文件放于所在 MCDR 的根目录下运行\n
-# 请先备份 {BACKUP_DATA_PATH} 下所有文件，确认后按下任意键
-# """)
+input(f"""
+用于跨版本迁移数据，强烈建议清除数据而非迁移，不保证成功\n
+如非默认，请将 better_backup 数据所在写入 BACKUP_DATA_PATH\n
+并将此文件放于所在 MCDR 的根目录下运行\n
+请先备份 {BACKUP_DATA_PATH} 下所有文件，确认后按下任意键
+""")
 
 MIGRATE_POLICY = int(
     input(
