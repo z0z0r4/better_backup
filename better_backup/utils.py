@@ -175,7 +175,7 @@ def format_dir_size(size: int) -> str:
 
 
 def get_stream_hash(obj, range_size: int = 1024 * 128) -> str:
-    """通过文件对象获取文件的md5值"""
+    """通过文件对象获取文件的hash值"""
     # hash = hashlib.md5()
     hash = xxhash.xxh3_64()
     while True:
@@ -187,7 +187,7 @@ def get_stream_hash(obj, range_size: int = 1024 * 128) -> str:
 
 
 def cache_file(src_file: str):
-    """获取文件的md5值，并将文件复制到缓存文件夹中"""
+    """获取文件的hash值，并将文件复制到缓存文件夹中"""
     # os.makedirs(os.path.split(src_file)[0], exist_ok=True)
     with open(src_file, "rb") as fsrc:
         hash = get_stream_hash(fsrc)
@@ -236,6 +236,13 @@ def ignore_files_and_folders(src: str, names: list) -> list:
             ignore_names.append(name)
     return ignore_names
 
+def clear_tree(path: str):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            os.remove(os.path.join(root, file))
+        for dir in dirs:
+            rmtree(os.path.join(root, dir))
+
 def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = None):
     os.makedirs(temp_dir, exist_ok=True)
     for src_dir in src_dirs:
@@ -247,8 +254,9 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
         )
     # copy all then delete all
     for src_dir in src_dirs:
-        rmtree(os.path.join(src_path, src_dir))
-        os.makedirs(os.path.join(src_path, src_dir))
+        if not os.path.exists(os.path.join(src_path, src_dir)):
+            os.makedirs(os.path.join(src_path, src_dir))
+        clear_tree(os.path.join(src_path, src_dir)) # 不删除 world_names 以防是软链接，只清空
 
 
 def restore_temp(
@@ -341,11 +349,7 @@ def restore_backup_util(
         # server/world/level.dat
         dst_file = os.path.join(fin_dst_dir, file.name)
 
-        if os.path.exists(zst_src):  # Try .zst first
-            # if pyzstd is None:
-            #     raise ModuleNotFoundError(
-            #         str(tr("restore_backup.zstd_not_found"))
-            #     )
+        if os.path.exists(zst_src):
             with open(zst_src, "rb") as fsrc:
                 with open(dst_file, "wb") as fdst:
                     pyzstd.decompress_stream(fsrc, fdst)
