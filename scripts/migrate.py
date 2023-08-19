@@ -17,7 +17,7 @@ import pyzstd
 database: DAL = None
 
 ZST_EXT = ".zst"
-BACKUP_DATA_PATH = "D:/projects/mcdr/better_backup"
+BACKUP_DATA_PATH = "better_backup"
 
 input(f"""
 用于跨版本迁移数据，强烈建议清除数据而非迁移，不保证成功\n
