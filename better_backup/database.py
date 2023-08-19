@@ -17,10 +17,6 @@ def load_database():
                           Field("hash_type"),
                           Field("path")
                         )
-    database.define_table("count",
-                          Field("hash"),
-                          Field("count", type="integer", default=0)
-                        )
     database.define_table("backups", 
                           Field("uuid"), 
                           Field("time", type="integer"), 
