@@ -284,7 +284,7 @@ def list_backups(source: CommandSource, page_num: int = 1):
                     "[",
                     RText("⊄ ", color=RColor.red) if backup_info.locked else RText("⊂ ", color=RColor.green)
                         .h(tr("list_backup.unlock_hint" if backup_info.locked else "list_backup.lock_hint", backup_info.uuid))
-                        .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
+                        .c(RAction.suggest_command, f'{PREFIX} lock {backup_info.uuid}'),
                     RText("▷ ", color=RColor.green)
                         .h(tr("list_backup.restore_hint", backup_info.uuid))
                         .c(RAction.suggest_command, f'{PREFIX} restore {backup_info.uuid}'),
