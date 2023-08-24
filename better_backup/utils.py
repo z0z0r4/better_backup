@@ -290,7 +290,7 @@ def get_backup_files(uuid: str) -> list:
 
 
 def get_backup_row(uuid: str):
-    return get_backups(database.backups.uuid == uuid).first()
+    return get_backups(database.backups.uuid == uuid)[0] or None
 
 
 def get_backups(filter=None, orderby=None):
