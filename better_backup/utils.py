@@ -243,7 +243,8 @@ def clear_tree(path: str):
         for dir in dirs:
             rmtree(os.path.join(root, dir))
 
-def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = None):
+def temp_and_clear(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = None):
+    """temp source dirs to avoid idiot"""
     os.makedirs(temp_dir, exist_ok=True)
     for src_dir in src_dirs:
         copytree(
@@ -254,9 +255,11 @@ def temp_src_folder(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = No
         )
     # copy all then delete all
     for src_dir in src_dirs:
-        if not os.path.exists(os.path.join(src_path, src_dir)):
-            os.makedirs(os.path.join(src_path, src_dir))
-        clear_tree(os.path.join(src_path, src_dir)) # 不删除 world_names 以防是软链接，只清空
+        if os.path.islink(src_dir):
+            clear_tree(os.path.join(src_path, src_dir))
+        else:
+            rmtree(src_dir)
+        os.makedirs(os.path.join(src_path, src_dir), exist_ok=True)
 
 
 def restore_temp(

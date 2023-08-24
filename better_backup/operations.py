@@ -210,7 +210,7 @@ def do_restore(source: CommandSource):
         source.get_server().wait_for_start()
 
         server_inst.logger.info("Backup current world to avoid idiot")
-        temp_src_folder(
+        temp_and_clear(
             *config.world_names,
             temp_dir=os.path.join(
                 config.backup_data_path, config.overwrite_backup_folder
