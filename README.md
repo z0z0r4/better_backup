@@ -1,3 +1,5 @@
+**中文** | [English](README_en.md)
+
 # Better_Backup
 
 一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
@@ -7,7 +9,7 @@
 > ⚠️ **警告：**  
 > v2.0.0 起使用 SQlite 不兼容以前版本的 JSON 备份数据  
 > v2.1.0 起使用 xxHash 不兼容以前版本的哈希数据  
-> **请在旧版本提前导出并清除 `better_backup` 文件夹内所有数据**
+> **请使用[迁移脚本](https://github.com/z0z0r4/better_backup/blob/main/scripts/migrate.py)，或在旧版本提前清除 `better_backup` 文件夹内所有数据**
 
 ## 特性
 
@@ -132,21 +134,21 @@ mcd_root/
 }
 ```
 
-## ~~Impossible~~ Todo
+## Todo list
 
-已基本完成，目前只进行 Bug 修复
+已基本完成，目前主要进行 Bug 修复
 
-以下 TODO 优先级从高到低 ~~，可遇见的是不会实现~~
+以下 TODO 优先级从高到低
 
 - [x] 支持锁定指定备份不被自动删除
-- [ ] 文件链接处理
+- [x] 文件链接处理
 - [x] SQlite 支持
-- [ ] 备份点还原文件 stat
-- [ ] 支持正则忽略文件/目录
 - [x] 导出支持 `.tar.zst`
-- [x] 补完 xxHash 功能 [Branch xxHash](https://github.com/z0z0r4/better_backup/tree/xxhash)
+- [x] xxHash
+- [ ] 忽略文件/目录时支持通配符
+- [ ] 备份和还原文件 stat
 
-## Wontdo
+## Won't do
 
 - [ ] ~~云备份，包括各家对象存储和 WebDav，不考虑无接口官方 API 网盘~~
 - [ ] ~~多盘备份，将备份同步保存到多个路径~~
