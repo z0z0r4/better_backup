@@ -47,10 +47,6 @@ mcd_root/
 
 The configuration file is `config/better_backup.json`. It will be automatically generated the first time it's run, with the following default values (comments are not really supported):
 
-## 配置文件选项说明
-
-配置文件为 `config/better_backup.json`。它会在第一次运行时自动生成，默认值如下（不支持注释）：
-
 ```json5
 {
     "size_display": true,
