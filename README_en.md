@@ -4,7 +4,7 @@
 
 An MCDR plugin for efficient backup and restore, with less disk usage and no duplicate files.
 
-! [image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
+![image](https://github.com/z0z0r4/better_backup/assets/45303195/f96d023b-007f-433a-bca9-fec4283e9d6f)
 
 > ⚠️ **Warning:**  
 > Version >=2.0.0 does not compatible with old JSON backup data from previous versions.  
