@@ -3,7 +3,7 @@
 # Better_Backup
 
 > [!WARNING]
-> Better Backup is currently in an experimental phase. It is strongly recommended that you do not use it in a production environment and do backup important data.
+> **Better Backup is currently in an experimental phase. It is strongly recommended that you do not use it in a production environment and do backup important data.**  
 > Before reporting a problem, please make sure you are using the latest version.
 
 An MCDR plugin for efficient backup and restore, with less disk usage and no duplicate files.
