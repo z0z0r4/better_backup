@@ -27,7 +27,7 @@ def init_structure(data_dir: str):
                 os.path.join(data_dir, CACHE_DIR, format(i, "02X").lower()),
                 exist_ok=True,
             )
-    load_database()
+    # load_database()
 
 
 def trigger_abort(source: CommandSource):
@@ -340,6 +340,7 @@ def reset_cache(source: CommandSource):
         raise e #! TODO: handle database.close
     rmtree(config.backup_data_path)
     init_structure(config.backup_data_path)
+    load_database()
     print_message(source, tr("reset_backup.success"))
 
 

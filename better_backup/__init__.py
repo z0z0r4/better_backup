@@ -178,6 +178,9 @@ def on_info(server: PluginServerInterface, info: Info):
 
 def on_load(server: PluginServerInterface, old):
     global operation_lock
+    init_structure(config.backup_data_path)
+    register_command(server)
+
     if hasattr(old, "operation_lock") and type(old.operation_lock) == type(
         operation_lock
     ):
@@ -188,9 +191,6 @@ def on_load(server: PluginServerInterface, old):
     ):
         raise MetadataError(tr("metadata_conflict"))
     server.register_help_message(PREFIX, tr("help_title"))
-
-    init_structure(config.backup_data_path)
-    register_command(server)
     server.logger.info("Better Backup Loaded!")
 
 
