@@ -333,7 +333,11 @@ def list_backups(source: CommandSource, page_num: int = 1):
 @single_op(tr("operations.reset"))
 def reset_cache(source: CommandSource):
     print_message(source, tr("reset_backup.start"))
-    # database.close()
+    try:
+        database.commit()
+        database.close()
+    except Exception as e:
+        raise e #! TODO: handle database.close
     rmtree(config.backup_data_path)
     init_structure(config.backup_data_path)
     print_message(source, tr("reset_backup.success"))
