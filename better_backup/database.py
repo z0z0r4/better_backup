@@ -9,7 +9,6 @@ def load_database():
     global database
     os.makedirs(config.backup_data_path, exist_ok=True)
     database = DAL("sqlite://storage.db", folder=config.backup_data_path, auto_import=True)
-    print(database.tables)
 
     if 'files' not in database.tables:
       database.define_table("files",
