@@ -380,12 +380,12 @@ def remove_backup_util(backup_uuid: str):
 
 
 def auto_remove_util(limit: int) -> list:
-    # get unlocked backup by time (not ~time)
-    all_backup_info = get_backups((database.backups.locked == False) | (database.backups.locked == None), orderby=database.backups.time)
+    # get unlocked backup by ~time
+    all_backup_info = get_backups((database.backups.locked == False) | (database.backups.locked == None), orderby=~database.backups.time)
     count = len(all_backup_info)
     removed_uuids = []
     if count > limit:
-        for backup_info in all_backup_info[:limit]: # remove oldest backups
+        for backup_info in all_backup_info[limit:]: # remove oldest backups
             remove_backup_util(backup_info.uuid)
             removed_uuids.append(backup_info.uuid)
     return removed_uuids
