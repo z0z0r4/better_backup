@@ -1,14 +1,16 @@
-# 此插件目前不推荐使用，仅供实验性测试
-
 **中文** | [English](README_en.md)
 
 # Better_Backup
+
+> [!WARNING]
+> Better Backup 目前正处于试验阶段。强烈建议您不要在生产环境使用，并做好重要数据备份。
+> 在报告问题前，请留意您正使用的是否为最新版本。
 
 一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
 
 ![image](https://github.com/z0z0r4/better_backup/assets/45303195/1f586ea7-a7f2-456d-bc19-09eade53f798)
 
-> ⚠️ **警告：**  
+> [!IMPORTANT]
 > v2.0.0 起使用 SQlite 不兼容以前版本的 JSON 备份数据  
 > v2.1.0 起使用 xxHash 不兼容以前版本的哈希数据  
 > **请使用[迁移脚本](https://github.com/z0z0r4/better_backup/blob/main/scripts/migrate.py)，或在旧版本提前清除 `better_backup` 文件夹内所有数据**

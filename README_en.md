@@ -2,11 +2,15 @@
 
 # Better_Backup
 
+> [!WARNING]
+> Better Backup is currently in an experimental phase. It is strongly recommended that you do not use it in a production environment and do backup important data.
+> Before reporting a problem, please make sure you are using the latest version.
+
 An MCDR plugin for efficient backup and restore, with less disk usage and no duplicate files.
 
 ![image](https://github.com/z0z0r4/better_backup/assets/45303195/f96d023b-007f-433a-bca9-fec4283e9d6f)
 
-> ⚠️ **Warning:**  
+> [!IMPORTANT]
 > Version >=2.0.0 does not compatible with old JSON backup data from previous versions.  
 > Version >=2.1.0 does not compatible with old HASH data from previous versions.  
 > **Please [migrate](https://github.com/z0z0r4/better_backup/blob/main/scripts/migrate.py), or clear all data in `better_backup`before updating**.
