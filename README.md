@@ -1,3 +1,5 @@
+# 此插件目前不推荐使用，仅供实验性测试
+
 **中文** | [English](README_en.md)
 
 # Better_Backup
