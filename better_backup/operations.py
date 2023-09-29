@@ -129,7 +129,7 @@ def remove_backup(
 ):
     uuid_result = get_uuid(source, kw)
     if uuid_result is None:
-        print_message(source, tr("unknown_backup"))
+        # print_message(source, tr("unknown_backup")) # Unknown backup message output already exists in get_uuid
         return
 
     print_message(source, tr("remove_backup.start"))
