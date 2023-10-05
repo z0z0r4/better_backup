@@ -336,8 +336,10 @@ def reset_cache(source: CommandSource):
     try:
         database.commit()
         database.close()
+    except AttributeError as e:
+        pass
     except Exception as e:
-        raise e #! TODO: handle database.close
+        raise e
     rmtree(config.backup_data_path)
     init_structure(config.backup_data_path)
     load_database()
