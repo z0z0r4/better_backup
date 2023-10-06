@@ -1,4 +1,4 @@
 mcdreforged>=2.1.2
 pydal~=20230521.1
 pyzstd~=0.15.9
-xxhash~=3.3.0
+xxhash~=3.4.1
