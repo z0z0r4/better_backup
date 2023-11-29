@@ -247,19 +247,25 @@ def temp_and_clear(*src_dirs: str, temp_dir: str = TEMP_DIR, src_path: str = Non
     """temp source dirs to avoid idiot"""
     os.makedirs(temp_dir, exist_ok=True)
     for src_dir in src_dirs:
+        source_dir = os.path.join(src_path, src_dir) if src_path else src_dir
+        destination_dir = os.path.join(temp_dir, src_dir)
         copytree(
-            os.path.join(src_path, src_dir),
-            os.path.join(temp_dir, src_dir),
+            source_dir,
+            destination_dir,
             dirs_exist_ok=True,
             ignore=ignore_files_and_folders,
         )
+
     # copy all then delete all
     for src_dir in src_dirs:
-        if os.path.islink(src_dir):
-            clear_tree(os.path.join(src_path, src_dir))
+        full_src_dir = os.path.join(src_path, src_dir) if src_path else src_dir
+
+        if os.path.islink(full_src_dir):
+            os.unlink(full_src_dir)
         else:
-            rmtree(src_dir)
-        os.makedirs(os.path.join(src_path, src_dir), exist_ok=True)
+            rmtree(full_src_dir)
+        os.makedirs(full_src_dir, exist_ok=True)
+
 
 
 def restore_temp(
