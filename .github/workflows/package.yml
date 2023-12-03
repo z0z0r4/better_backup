@@ -1,3 +1,4 @@
+# From TISUnion/QuickBackupM
 name: CI for MCDR Plugin
 
 on:
@@ -36,7 +37,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: QuickBackupM distribution for ${{ github.sha }}
+          name: BetterBackup distribution for ${{ github.sha }}
           path: package/
 
       - name: Publish distribution to release
