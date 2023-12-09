@@ -2,6 +2,8 @@
 
 # Better_Backup
 
+**Archived! Use [PrimeBackup](https://github.com/TISUnion/PrimeBackup) plz**
+
 > [!WARNING]
 > **Better Backup is currently in an experimental phase. It is strongly recommended that you do not use it in a production environment and do backup important data.**  
 > Before reporting a problem, please make sure you are using the latest version.
