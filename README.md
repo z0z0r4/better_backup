@@ -3,7 +3,8 @@
 # Better_Backup
 
 > [!WARNING]
-> **Better Backup 目前正处于试验阶段。强烈建议您不要在生产环境使用，并做好重要数据备份。**  
+> **Better Backup 计划停更，建议使用 [PrimeBackup](https://github.com/TISUnion/PrimeBackup)** ~~马上高三无力维护~~  
+> ~~**Better Backup 目前正处于试验阶段。强烈建议您不要在生产环境使用，并做好重要数据备份。**~~  
 > 在报告问题前，请留意您正使用的是否为最新版本。
 
 一个高效备份回档、更少磁盘占用、避免重复文件的 MCDR 插件。
